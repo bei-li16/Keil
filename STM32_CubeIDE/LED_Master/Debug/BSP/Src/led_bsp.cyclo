@@ -1,0 +1,9 @@
+../BSP/Src/led_bsp.c:9:6:Led_RedFlip	1
+../BSP/Src/led_bsp.c:14:6:Led_GreenFlip	1
+../BSP/Src/led_bsp.c:19:6:Led_BlueFlip	1
+../BSP/Src/led_bsp.c:24:6:Led_RedON	1
+../BSP/Src/led_bsp.c:28:6:Led_RedOFF	1
+../BSP/Src/led_bsp.c:33:6:Led_GreenON	1
+../BSP/Src/led_bsp.c:37:6:Led_GreenOFF	1
+../BSP/Src/led_bsp.c:42:6:Led_BlueON	1
+../BSP/Src/led_bsp.c:46:6:Led_BlueOFF	1

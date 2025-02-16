@@ -1,0 +1,3 @@
+Dependencies for Project 'example', Target 'Example': (DO NOT MODIFY !)
+CompilerVersion: 6220000::V6.22::ARMCLANG
+F (.\USER\main.c)(0x6772C2CB)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O0 -ffunction-sections -Wall -Wextra -Wno-packed -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier-I./RTE/_Example-IC:/Users/18283/AppData/Local/Arm/Packs/ARM/CMSIS/6.1.0/CMSIS/Core/Include-IC:/Users/18283/AppData/Local/Arm/Packs/ARM/CMSIS/6.1.0/CMSIS/Driver/Include-D__UVISION_VERSION="541" -DSTM32F429xx -D_RTE_-o ./main.o -MMD)
