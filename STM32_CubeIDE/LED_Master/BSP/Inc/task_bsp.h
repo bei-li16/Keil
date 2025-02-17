@@ -12,6 +12,7 @@
 #include "led_bsp.h"
 #include "tools_bsp.h"
 #include "global_timer.h"
+#include "bsp_adc.h"
 
 #define 	TASK_1MS		0x01
 #define 	TASK_5MS		0x02

@@ -9,6 +9,7 @@
 char TxMsg[TX_MESSAGE_LEN];
 char RxMsg[RX_MESSAGE_LEN];
 char msg_log[MSGLOG_LEN];
+uint8_t TxStatus = STD_ON;
 MsgLog msg;
 
 void Msg_Init(void)
@@ -80,6 +81,8 @@ uint32_t DEBUG_PRINTF(const char *format, ...) {
 
     uint32_t currentTime = 0;
 
+    while(TxStatus != STD_ON);
+    TxStatus = STD_OFF;
     currentTime = HAL_GetTick();
 	tsLen = snprintf(TxMsg, sizeof(TxMsg), "%010u", currentTime);
 	msgLen = vsnprintf(TxMsg+tsLen, sizeof(TxMsg), format, args);
@@ -91,6 +94,7 @@ uint32_t DEBUG_PRINTF(const char *format, ...) {
     {
     	totalLen = sizeof(TxMsg) - 1;
     }
+//    while(!(HAL_UART_STATE_READY == HAL_UART_GetState(TRANSMIT_COMPORT)));
 #if (MSG_PRINT_METHOD == PRINT_IMM)
 #if (TRANSMIT_METHOD == POLLING)
     ret = HAL_UART_Transmit(TRANSMIT_COMPORT, (const uint8_t *)TxMsg, totalLen, TRANSMIT_TIMEOUT);
@@ -114,6 +118,14 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 		HAL_UART_Transmit_DMA(TRANSMIT_COMPORT, (const uint8_t *)RxMsg, Size);
 		HAL_UARTEx_ReceiveToIdle_DMA(RECEIVE_COMPORT, RxMsg, RX_MESSAGE_LEN);
 		__HAL_DMA_DISABLE_IT(RECEIVE_DMA, DMA_IT_HT);
+	}
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(RECEIVE_COMPORT == huart)
+	{
+		TxStatus = STD_ON;
 	}
 }
 

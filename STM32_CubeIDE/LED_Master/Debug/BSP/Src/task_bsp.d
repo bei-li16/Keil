@@ -1,6 +1,6 @@
 BSP/Src/task_bsp.o: ../BSP/Src/task_bsp.c \
- C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LED_Master/BSP/Inc/task_bsp.h \
- C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LED_Master/BSP/Inc/tools_bsp.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/task_bsp.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/tools_bsp.h \
  ../Core/Inc/usart.h ../Core/Inc/main.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
@@ -22,6 +22,9 @@ BSP/Src/task_bsp.o: ../BSP/Src/task_bsp.c \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_cortex.h \
+ ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_adc.h \
+ ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_adc.h \
+ ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_adc_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ramfunc.h \
@@ -31,13 +34,15 @@ BSP/Src/task_bsp.o: ../BSP/Src/task_bsp.c \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
  ../Core/Inc/dma.h \
- C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LED_Master/BSP/Inc/led_bsp.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/led_bsp.h \
  ../Core/Inc/gpio.h \
- C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LED_Master/BSP/Inc/global_timer.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/global_timer.h \
  ../Core/Inc/tim.h \
- C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LED_Master/BSP/Inc/task_bsp.h
-C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LED_Master/BSP/Inc/task_bsp.h:
-C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LED_Master/BSP/Inc/tools_bsp.h:
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/task_bsp.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/bsp_adc.h \
+ ../Core/Inc/adc.h
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/task_bsp.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/tools_bsp.h:
 ../Core/Inc/usart.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -60,6 +65,9 @@ C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LED_Master/BSP/Inc/tools_bsp.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_cortex.h:
+../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_adc.h:
+../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_adc.h:
+../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_adc_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ramfunc.h:
@@ -69,8 +77,10 @@ C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LED_Master/BSP/Inc/tools_bsp.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
 ../Core/Inc/dma.h:
-C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LED_Master/BSP/Inc/led_bsp.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/led_bsp.h:
 ../Core/Inc/gpio.h:
-C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LED_Master/BSP/Inc/global_timer.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/global_timer.h:
 ../Core/Inc/tim.h:
-C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LED_Master/BSP/Inc/task_bsp.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/task_bsp.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/bsp_adc.h:
+../Core/Inc/adc.h:

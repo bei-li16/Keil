@@ -53,6 +53,7 @@ void Task_1000ms_Entry(void)
 {
 	LOG_RELEASE("This is a 1000ms message\n");
 	Led_task();
+	Bsp_AdcValuePrint();
 	RESET_1000MS_TASK;
 }
 
@@ -62,6 +63,7 @@ void OS_Init(void)
 	HAL_TIM_Base_Start_IT(PRINT_TIMER);
 	HAL_TIM_Base_Start_IT(GLOBAL_TIMER);
 	HAL_UARTEx_ReceiveToIdle_DMA(RECEIVE_COMPORT, RxMsg, RX_MESSAGE_LEN);
+	Bsp_AdcStart();
 }
 
 void Start_OS(void)
