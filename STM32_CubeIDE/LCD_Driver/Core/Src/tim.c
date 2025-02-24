@@ -97,7 +97,7 @@ void MX_TIM5_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM2;
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 50;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_ENABLE;

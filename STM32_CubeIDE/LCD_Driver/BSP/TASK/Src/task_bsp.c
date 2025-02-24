@@ -76,7 +76,7 @@ void Task_500ms_Entry(void)
 	// LOG_RELEASE("SPI Tx Cpt: %d.\n", SPI_Tx_Cpt);
 	// LOG_RELEASE("LCD Tx Cpt: %d.\n", LCD_Tx_Cpt);
 	// OLED_task();
-	Lcd_Task();
+	// Lcd_Task();
 	RESET_500MS_TASK;
 }
 uint8_t ret0 = 0;
@@ -84,7 +84,7 @@ void Task_1000ms_Entry(void)
 {
 	LOG_RELEASE("This is a 1000ms message\n");
 	// LOG_RELEASE("OS_Tick: %d.\n", OS_Tick1ms);
-	I2C_Test1();
+	// I2C_Test1();
 	// Tower_Around_Test();
 	// Tower_GreenLed_Test();
 	GreenLed_Test();

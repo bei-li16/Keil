@@ -66,5 +66,10 @@ void GreenLed_Test(void)
         __HAL_TIM_SET_COMPARE(TIM_TOWER_PORT, TIM_TOWER_CHANNEL, i * LED_TEST_STEPLEN);
         HAL_Delay(LED_TEST_DELAY);
     }
+    for(int i = 0; i < LED_TEST_STEP; i++)
+    {
+        __HAL_TIM_SET_COMPARE(TIM_TOWER_PORT, TIM_TOWER_CHANNEL, TIM_TOWER_PWM_PERIOD - i * LED_TEST_STEPLEN);
+        HAL_Delay(LED_TEST_DELAY);
+    }
     LOG_RELEASE("--------------Led around test End--------------\n");
 }

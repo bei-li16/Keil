@@ -1,6 +1,6 @@
 BSP/TASK/Src/task_bsp.o: ../BSP/TASK/Src/task_bsp.c \
- C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/TASK/Inc/task_bsp.h \
- C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/LCD/Inc/Lcd_Driver.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/TASK/Inc/task_bsp.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/LCD/Inc/Lcd_Driver.h \
  ../Core/Inc/gpio.h ../Core/Inc/main.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
@@ -32,14 +32,14 @@ BSP/TASK/Src/task_bsp.o: ../BSP/TASK/Src/task_bsp.c \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/LOG/Inc/bsp_log.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/LOG/Inc/bsp_log.h \
  ../Core/Inc/usart.h ../Core/Inc/dma.h \
- C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/TASK/Inc/bsp_timer.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/TASK/Inc/bsp_timer.h \
  ../Core/Inc/tim.h \
- C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/TASK/Inc/task_bsp.h \
- C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/PWM/Inc/bsp_tower.h
-C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/TASK/Inc/task_bsp.h:
-C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/LCD/Inc/Lcd_Driver.h:
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/TASK/Inc/task_bsp.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/PWM/Inc/bsp_tower.h
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/TASK/Inc/task_bsp.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/LCD/Inc/Lcd_Driver.h:
 ../Core/Inc/gpio.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -72,10 +72,10 @@ C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/LCD/Inc/Lcd_Driver.h
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
-C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/LOG/Inc/bsp_log.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/LOG/Inc/bsp_log.h:
 ../Core/Inc/usart.h:
 ../Core/Inc/dma.h:
-C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/TASK/Inc/bsp_timer.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/TASK/Inc/bsp_timer.h:
 ../Core/Inc/tim.h:
-C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/TASK/Inc/task_bsp.h:
-C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/PWM/Inc/bsp_tower.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/TASK/Inc/task_bsp.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/PWM/Inc/bsp_tower.h:

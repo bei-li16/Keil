@@ -1,5 +1,5 @@
 BSP/LOG/Src/bsp_log.o: ../BSP/LOG/Src/bsp_log.c \
- C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/LOG/Inc/bsp_log.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/LOG/Inc/bsp_log.h \
  ../Core/Inc/usart.h ../Core/Inc/main.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
@@ -32,7 +32,7 @@ BSP/LOG/Src/bsp_log.o: ../BSP/LOG/Src/bsp_log.c \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
  ../Core/Inc/dma.h
-C:/Users/18283/STM32CubeIDE/workspace_1.17.0/LCD_Driver/BSP/LOG/Inc/bsp_log.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LCD_Driver/BSP/LOG/Inc/bsp_log.h:
 ../Core/Inc/usart.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
