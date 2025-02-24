@@ -22,6 +22,8 @@ C_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
+BSP/LCD/Src \
+BSP/OLED/Src \
 BSP/Src \
 Core/Src \
 Core/Startup \

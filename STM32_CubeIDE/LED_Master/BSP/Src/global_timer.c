@@ -19,6 +19,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	if(GLOBAL_TIMER == htim)
 	{
 		timestamp1ms++;
+		if(((timestamp1ms + 1) % 500) == 0)
+		{
+			SET_500MS_TASK;
+		}
 	}
 	else if (PRINT_TIMER == htim)
 	{

@@ -30,6 +30,7 @@ BSP/Src/task_bsp.o: ../BSP/Src/task_bsp.c \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ramfunc.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr_ex.h \
+ ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_spi.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
@@ -40,7 +41,12 @@ BSP/Src/task_bsp.o: ../BSP/Src/task_bsp.c \
  ../Core/Inc/tim.h \
  K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/task_bsp.h \
  K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/bsp_adc.h \
- ../Core/Inc/adc.h
+ ../Core/Inc/adc.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/OLED/Inc/bsp_oled.h \
+ ../Core/Inc/spi.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/LCD/Inc/Lcd_Driver.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/OLED/Inc/bsp_bmp.h \
+ K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/LCD/Inc/Lcd_bmp.h
 K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/task_bsp.h:
 K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/tools_bsp.h:
 ../Core/Inc/usart.h:
@@ -73,6 +79,7 @@ K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/tools_bsp.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ramfunc.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr_ex.h:
+../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_spi.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
@@ -84,3 +91,8 @@ K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/global_timer.h:
 K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/task_bsp.h:
 K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/Inc/bsp_adc.h:
 ../Core/Inc/adc.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/OLED/Inc/bsp_oled.h:
+../Core/Inc/spi.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/LCD/Inc/Lcd_Driver.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/OLED/Inc/bsp_bmp.h:
+K:/Data/GitFiles/Keil/STM32_CubeIDE/LED_Master/BSP/LCD/Inc/Lcd_bmp.h:

@@ -1,0 +1,16 @@
+../BSP/LCD/Src/Lcd_Driver.c:25:6:delay_ms	16	static
+../BSP/LCD/Src/Lcd_Driver.c:47:7:SPI_WriteData	24	static
+../BSP/LCD/Src/Lcd_Driver.c:75:7:Lcd_WriteIndex	16	static
+../BSP/LCD/Src/Lcd_Driver.c:85:7:Lcd_WriteData	16	static
+../BSP/LCD/Src/Lcd_Driver.c:93:7:LCD_WriteData_16Bit	16	static
+../BSP/LCD/Src/Lcd_Driver.c:102:6:Lcd_WriteReg	16	static
+../BSP/LCD/Src/Lcd_Driver.c:108:6:Lcd_Reset	8	static
+../BSP/LCD/Src/Lcd_Driver.c:117:7:Lcd_Init	8	static
+../BSP/LCD/Src/Lcd_Driver.c:240:6:Lcd_SetRegion	24	static
+../BSP/LCD/Src/Lcd_Driver.c:264:6:Lcd_SetXY	16	static
+../BSP/LCD/Src/Lcd_Driver.c:276:7:Gui_DrawPoint	16	static
+../BSP/LCD/Src/Lcd_Driver.c:289:7:LCD_DrawBMP_8BIT	24	static
+../BSP/LCD/Src/Lcd_Driver.c:309:7:LCD_DrawBMP_16BIT	24	static
+../BSP/LCD/Src/Lcd_Driver.c:335:6:LCD_DrawBMP_BAPBIT	24	static
+../BSP/LCD/Src/Lcd_Driver.c:352:14:Lcd_ReadPoint	24	static
+../BSP/LCD/Src/Lcd_Driver.c:368:6:Lcd_Clear	24	static

@@ -13,6 +13,8 @@
 #include "tools_bsp.h"
 #include "global_timer.h"
 #include "bsp_adc.h"
+#include "bsp_oled.h"
+#include "Lcd_Driver.h"
 
 #define 	TASK_1MS		0x01
 #define 	TASK_5MS		0x02

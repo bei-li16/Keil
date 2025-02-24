@@ -13,6 +13,8 @@ RM := rm -rf
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
 -include BSP/Src/subdir.mk
+-include BSP/OLED/Src/subdir.mk
+-include BSP/LCD/Src/subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)

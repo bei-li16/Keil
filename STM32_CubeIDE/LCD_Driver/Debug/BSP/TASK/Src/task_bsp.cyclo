@@ -1,0 +1,10 @@
+../BSP/TASK/Src/task_bsp.c:12:6:Lcd_Task	1
+../BSP/TASK/Src/task_bsp.c:30:6:Task_1ms_Entry	1
+../BSP/TASK/Src/task_bsp.c:36:6:Task_5ms_Entry	1
+../BSP/TASK/Src/task_bsp.c:42:6:Task_10ms_Entry	1
+../BSP/TASK/Src/task_bsp.c:48:6:Task_50ms_Entry	1
+../BSP/TASK/Src/task_bsp.c:54:6:Task_100ms_Entry	1
+../BSP/TASK/Src/task_bsp.c:66:6:Task_500ms_Entry	1
+../BSP/TASK/Src/task_bsp.c:83:6:Task_1000ms_Entry	1
+../BSP/TASK/Src/task_bsp.c:96:6:OS_Init	1
+../BSP/TASK/Src/task_bsp.c:111:6:Start_OS	8

@@ -1,0 +1,5 @@
+../BSP/LOG/Src/bsp_log.c:15:6:Msg_Init	4	static
+../BSP/LOG/Src/bsp_log.c:24:10:DEBUG_PRINTF	32	static
+../BSP/LOG/Src/bsp_log.c:62:10:SIMPLY_PRINTF	24	static
+../BSP/LOG/Src/bsp_log.c:98:6:HAL_UARTEx_RxEventCallback	16	static
+../BSP/LOG/Src/bsp_log.c:108:6:HAL_UART_TxCpltCallback	16	static
