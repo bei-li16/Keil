@@ -1,4 +1,6 @@
-# *.o
-# *.d
-# *.su
-# *.cyclo
+*.o
+*.d
+*.su
+*.cyclo
+STM32_CubeIDE/LCD_Driver/Debug/*
+STM32_CubeIDE/LED_Master/Debug/*
