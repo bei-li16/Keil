@@ -7,8 +7,9 @@
 
 #include "Lcd_Driver.h"
 #include <stdint.h>
+#include "Lcd_bmp.h"
 
-
+uint8_t LCD_TX_STATUS = STD_ON;
 //本测试程序使用的是模拟SPI接口驱动
 //可自由更改接口IO配置，使用任意最少4 IO即可完成本款液晶驱动显示
 /******************************************************************************
@@ -17,7 +18,7 @@
 #define LCD_LED        	GPIO_Pin_9  //PB9--->>TFT --BL
 #define LCD_RS         	GPIO_Pin_10	//PB11--->>TFT --RS/DC
 #define LCD_CS        	GPIO_Pin_11 //PB11--->>TFT --CS/CE
-#define LCD_RST     		GPIO_Pin_12	//PB10--->>TFT --RST
+#define LCD_RST     	GPIO_Pin_12	//PB10--->>TFT --RST
 #define LCD_SCL        	GPIO_Pin_13	//PB13--->>TFT --SCL/SCK
 #define LCD_SDA        	GPIO_Pin_15	//PB15 MOSI--->>TFT --SDA/DIN
 *******************************************************************************/
@@ -63,11 +64,14 @@ void  SPI_WriteData(uint8_t Data)
         Data<<=1; 
     }
 #else
-    extern uint8_t LCD_Tx_Status;
+#if (SPI_TRANSMIT_IM == STD_ON)
     uint8_t *pData = &Data;
-    while(LCD_Tx_Status != STD_ON);
-    LCD_Tx_Status = STD_OFF;
-    HAL_SPI_Transmit_DMA(&LCD_SPI, pData, 1);
+    HAL_SPI_Transmit(&LCD_SPI, pData, 1, 1000);
+#elif (SPI_TRANSMIT_DMA == STD_ON)
+    while (LCD_TX_STATUS == STD_OFF);
+    LCD_TX_STATUS = STD_OFF;
+    HAL_SPI_Transmit_DMA(&LCD_SPI, &Data, 1);
+#endif
 #endif
 }
  
@@ -78,7 +82,9 @@ void  SPI_WriteData(uint8_t Data)
     LCD_CS_CLR;
     LCD_RS_CLR;
     SPI_WriteData(Index);
+#if (SPI_TRANSMIT_IM == STD_ON)
     LCD_CS_SET;
+#endif
  }
  
  //向液晶屏写一个8位数据
@@ -87,7 +93,9 @@ void  SPI_WriteData(uint8_t Data)
     LCD_CS_CLR;
     LCD_RS_SET;
     SPI_WriteData(Data);
-    LCD_CS_SET; 
+#if (SPI_TRANSMIT_IM == STD_ON)
+    LCD_CS_SET;
+#endif
  }
  //向液晶屏写一个16位数据
  void LCD_WriteData_16Bit(uint16_t Data)
@@ -96,7 +104,9 @@ void  SPI_WriteData(uint8_t Data)
     LCD_RS_SET;
     SPI_WriteData(Data>>8); 	//写入高8位数据
     SPI_WriteData(Data); 			//写入低8位数据
-    LCD_CS_SET; 
+#if (SPI_TRANSMIT_IM == STD_ON)
+    LCD_CS_SET;
+#endif
  }
  
 void Lcd_WriteReg(uint8_t Index,uint8_t Data)
@@ -113,122 +123,124 @@ void Lcd_Reset(void)
      HAL_Delay(100);
 }
  
- //LCD Init For 1.44Inch LCD Panel with ST7735R.
- void Lcd_Init(void)
- {	
-//     LCD_GPIO_Init();
-     Lcd_Reset(); //Reset before LCD Init.
- 
-     //LCD Init For 1.44Inch LCD Panel with ST7735R.
-     Lcd_WriteIndex(0x11);//Sleep exit 
-     HAL_Delay (120);
-     //ST7735R Frame Rate
-     Lcd_WriteIndex(0xB1); 
-     Lcd_WriteData(0x01); 
-     Lcd_WriteData(0x2C); 
-     Lcd_WriteData(0x2D); 
- 
-     Lcd_WriteIndex(0xB2); 
-     Lcd_WriteData(0x01); 
-     Lcd_WriteData(0x2C); 
-     Lcd_WriteData(0x2D); 
- 
-     Lcd_WriteIndex(0xB3); 
-     Lcd_WriteData(0x01); 
-     Lcd_WriteData(0x2C); 
-     Lcd_WriteData(0x2D); 
-     Lcd_WriteData(0x01); 
-     Lcd_WriteData(0x2C); 
-     Lcd_WriteData(0x2D); 
-     
-     Lcd_WriteIndex(0xB4); //Column inversion 
-     Lcd_WriteData(0x07); 
-     
-     //ST7735R Power Sequence
-     Lcd_WriteIndex(0xC0); 
-     Lcd_WriteData(0xA2); 
-     Lcd_WriteData(0x02); 
-     Lcd_WriteData(0x84); 
-     Lcd_WriteIndex(0xC1); 
-     Lcd_WriteData(0xC5); 
- 
-     Lcd_WriteIndex(0xC2); 
-     Lcd_WriteData(0x0A); 
-     Lcd_WriteData(0x00); 
- 
-     Lcd_WriteIndex(0xC3); 
-     Lcd_WriteData(0x8A); 
-     Lcd_WriteData(0x2A); 
-     Lcd_WriteIndex(0xC4); 
-     Lcd_WriteData(0x8A); 
-     Lcd_WriteData(0xEE); 
-     
-     Lcd_WriteIndex(0xC5); //VCOM 
-     Lcd_WriteData(0x0E); 
-     
-     Lcd_WriteIndex(0x36); //MX, MY, RGB mode 
-     Lcd_WriteData(0xC8); 
-     
-     //ST7735R Gamma Sequence
-     Lcd_WriteIndex(0xe0); 
-     Lcd_WriteData(0x0f); 
-     Lcd_WriteData(0x1a); 
-     Lcd_WriteData(0x0f); 
-     Lcd_WriteData(0x18); 
-     Lcd_WriteData(0x2f); 
-     Lcd_WriteData(0x28); 
-     Lcd_WriteData(0x20); 
-     Lcd_WriteData(0x22); 
-     Lcd_WriteData(0x1f); 
-     Lcd_WriteData(0x1b); 
-     Lcd_WriteData(0x23); 
-     Lcd_WriteData(0x37); 
-     Lcd_WriteData(0x00); 	
-     Lcd_WriteData(0x07); 
-     Lcd_WriteData(0x02); 
-     Lcd_WriteData(0x10); 
- 
-     Lcd_WriteIndex(0xe1); 
-     Lcd_WriteData(0x0f); 
-     Lcd_WriteData(0x1b); 
-     Lcd_WriteData(0x0f); 
-     Lcd_WriteData(0x17); 
-     Lcd_WriteData(0x33); 
-     Lcd_WriteData(0x2c); 
-     Lcd_WriteData(0x29); 
-     Lcd_WriteData(0x2e); 
-     Lcd_WriteData(0x30); 
-     Lcd_WriteData(0x30); 
-     Lcd_WriteData(0x39); 
-     Lcd_WriteData(0x3f); 
-     Lcd_WriteData(0x00); 
-     Lcd_WriteData(0x07); 
-     Lcd_WriteData(0x03); 
-     Lcd_WriteData(0x10);  
-     
-     Lcd_WriteIndex(0x2a);
-     Lcd_WriteData(0x00);
-     Lcd_WriteData(0x00);
-     Lcd_WriteData(0x00);
-     Lcd_WriteData(0x7f);
- 
-     Lcd_WriteIndex(0x2b);
-     Lcd_WriteData(0x00);
-     Lcd_WriteData(0x00);
-     Lcd_WriteData(0x00);
-     Lcd_WriteData(0x9f);
-     
-     Lcd_WriteIndex(0xF0); //Enable test command  
-     Lcd_WriteData(0x01); 
-     Lcd_WriteIndex(0xF6); //Disable ram power save mode 
-     Lcd_WriteData(0x00); 
-     
-     Lcd_WriteIndex(0x3A); //65k mode 
-     Lcd_WriteData(0x05); 
-     
-     
-     Lcd_WriteIndex(0x29);//Display on	 
- }
+//LCD Init For 1.44Inch LCD Panel with ST7735R.
+void Lcd_Init(void)
+{	
+    // LCD_GPIO_Init();
+    Lcd_Reset(); //Reset before LCD Init.
+
+    //LCD Init For 1.44Inch LCD Panel with ST7735R.
+    Lcd_WriteIndex(0x11);//Sleep exit 
+    HAL_Delay (120);
+    //ST7735R Frame Rate
+    Lcd_WriteIndex(0xB1); 
+    Lcd_WriteData(0x01); 
+    Lcd_WriteData(0x2C); 
+    Lcd_WriteData(0x2D); 
+
+    Lcd_WriteIndex(0xB2); 
+    Lcd_WriteData(0x01); 
+    Lcd_WriteData(0x2C); 
+    Lcd_WriteData(0x2D); 
+
+    Lcd_WriteIndex(0xB3); 
+    Lcd_WriteData(0x01); 
+    Lcd_WriteData(0x2C); 
+    Lcd_WriteData(0x2D); 
+    Lcd_WriteData(0x01); 
+    Lcd_WriteData(0x2C); 
+    Lcd_WriteData(0x2D); 
+    
+    Lcd_WriteIndex(0xB4); //Column inversion 
+    Lcd_WriteData(0x07); 
+    
+    //ST7735R Power Sequence
+    Lcd_WriteIndex(0xC0); 
+    Lcd_WriteData(0xA2); 
+    Lcd_WriteData(0x02); 
+    Lcd_WriteData(0x84); 
+    Lcd_WriteIndex(0xC1); 
+    Lcd_WriteData(0xC5); 
+
+    Lcd_WriteIndex(0xC2); 
+    Lcd_WriteData(0x0A); 
+    Lcd_WriteData(0x00); 
+
+    Lcd_WriteIndex(0xC3); 
+    Lcd_WriteData(0x8A); 
+    Lcd_WriteData(0x2A); 
+    Lcd_WriteIndex(0xC4); 
+    Lcd_WriteData(0x8A); 
+    Lcd_WriteData(0xEE); 
+    
+    Lcd_WriteIndex(0xC5); //VCOM 
+    Lcd_WriteData(0x0E); 
+    
+    Lcd_WriteIndex(0x36); //MX, MY, RGB mode 
+    Lcd_WriteData(0xC8); 
+    
+    //ST7735R Gamma Sequence
+    Lcd_WriteIndex(0xe0); 
+    Lcd_WriteData(0x0f); 
+    Lcd_WriteData(0x1a); 
+    Lcd_WriteData(0x0f); 
+    Lcd_WriteData(0x18); 
+    Lcd_WriteData(0x2f); 
+    Lcd_WriteData(0x28); 
+    Lcd_WriteData(0x20); 
+    Lcd_WriteData(0x22); 
+    Lcd_WriteData(0x1f); 
+    Lcd_WriteData(0x1b); 
+    Lcd_WriteData(0x23); 
+    Lcd_WriteData(0x37); 
+    Lcd_WriteData(0x00); 	
+    Lcd_WriteData(0x07); 
+    Lcd_WriteData(0x02); 
+    Lcd_WriteData(0x10); 
+
+    Lcd_WriteIndex(0xe1); 
+    Lcd_WriteData(0x0f); 
+    Lcd_WriteData(0x1b); 
+    Lcd_WriteData(0x0f); 
+    Lcd_WriteData(0x17); 
+    Lcd_WriteData(0x33); 
+    Lcd_WriteData(0x2c); 
+    Lcd_WriteData(0x29); 
+    Lcd_WriteData(0x2e); 
+    Lcd_WriteData(0x30); 
+    Lcd_WriteData(0x30); 
+    Lcd_WriteData(0x39); 
+    Lcd_WriteData(0x3f); 
+    Lcd_WriteData(0x00); 
+    Lcd_WriteData(0x07); 
+    Lcd_WriteData(0x03); 
+    Lcd_WriteData(0x10);  
+    
+    Lcd_WriteIndex(0x2a);
+    Lcd_WriteData(0x00);
+    Lcd_WriteData(0x00);
+    Lcd_WriteData(0x00);
+    Lcd_WriteData(0x7f);
+
+    Lcd_WriteIndex(0x2b);
+    Lcd_WriteData(0x00);
+    Lcd_WriteData(0x00);
+    Lcd_WriteData(0x00);
+    Lcd_WriteData(0x9f);
+    
+    Lcd_WriteIndex(0xF0); //Enable test command  
+    Lcd_WriteData(0x01); 
+    Lcd_WriteIndex(0xF6); //Disable ram power save mode 
+    Lcd_WriteData(0x00); 
+    
+    Lcd_WriteIndex(0x3A); //65k mode 
+    Lcd_WriteData(0x05); 
+    
+    Lcd_WriteIndex(0x29);//Display on
+
+    LCD_LED_SET;
+    Lcd_Clear(BLACK);
+}
  
  
  /*************************************************
@@ -286,19 +298,19 @@ void Lcd_SetXY(uint16_t x,uint16_t y)
  入口参数：无
  返回值：无
  *************************************************/
- void LCD_DrawBMP_8BIT(const unsigned char *p)
- {
-   int i; 
-     unsigned char picH,picL;
- //	Lcd_Clear(WHITE); 															//清屏 
-     Lcd_SetRegion(0,0,127,79);		//坐标设置
-     for(i=0;i<128*80;i++)
-     {
-         picL=*(p+i*2);														//数据低位在前
-         picH=*(p+i*2+1);				
-         LCD_WriteData_16Bit(picH<<8|picL);  						
-     }	
- }
+void LCD_DrawBMP_8BIT(const unsigned char *p)
+{
+    int i; 
+    unsigned char picH,picL;
+    //	Lcd_Clear(WHITE); 															//清屏 
+    Lcd_SetRegion(0,0,127,79);		//坐标设置
+    for(i=0;i<128*80;i++)
+    {
+        picL=*(p+i*2);														//数据低位在前
+        picH=*(p+i*2+1);				
+        LCD_WriteData_16Bit(picH<<8|picL);  						
+    }	
+}
  
  /*************************************************
  函数名：LCD_DrawBMP_16BIT
@@ -376,5 +388,38 @@ void Lcd_Clear(uint16_t Color)
             LCD_WriteData_16Bit(Color);
         }   
 }
+
+void Lcd_Display(void)
+{
+    static uint8_t i = 0;
+    switch (i++)
+    {
+    case 0:
+        Lcd_Clear(BLACK);
+        LCD_DrawBMP_8BIT(gImage_clannad);
+        break;
+    case 1:
+        Lcd_Clear(BLACK);
+        LCD_DrawBMP_16BIT(gImage_SunshineGirl);
+        break;
+    case 2:
+        Lcd_Clear(BLACK);
+        LCD_DrawBMP_BAPBIT(gImage_BadApple);
+        break;
+    case 3:
+        Lcd_Clear(BLACK);
+        LCD_DrawBMP_BAPBIT(Image_BadApple);
+        break;
+    default:
+        i = 0;
+        break;
+    }
+}
  
- 
+// DMA传输完成回调函数
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
+    if (&LCD_SPI == hspi) {
+        LCD_CS_SET;
+        LCD_TX_STATUS = STD_ON;
+    }
+}

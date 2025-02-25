@@ -5,27 +5,8 @@
  *      Author: 18283
  */
 #include "task_bsp.h"
-//#include "Lcd_bmp.h"
 
 volatile uint32_t Task_Cmd;
-
-void Lcd_Task(void)
-{
-	// LCD_DrawBMP_8BIT(gImage_clannad);
-	// delay_ms(1000);
-	// LCD_DrawBMP_16BIT(gImage_SunshineGirl);
-	// delay_ms(1000);
-	// LCD_DrawBMP_BAPBIT(gImage_BadApple);
-	// LCD_DrawBMP_BAPBIT(Image_BadApple);
-	//	delay_ms(1000);
-	// // Gui_DrawPoint(2,2, 0x0050); 
-	// uint8_t Data = 0xAB;
-	// uint8_t *pData = &Data;
-	// extern uint8_t TxStatus;
-	// while(TxStatus != STD_ON);
-    // TxStatus = STD_OFF;
-	// HAL_UART_Transmit_DMA(TRANSMIT_COMPORT, pData, 1);
-}
 
 void Task_1ms_Entry(void)
 {
@@ -57,17 +38,11 @@ void Task_100ms_Entry(void)
 	RESET_100MS_TASK;
 }
 
-// extern uint32_t SPI_Tx_Cpt;
-// extern uint32_t LCD_Tx_Cpt;
-extern volatile uint32_t OS_Tick1ms;
-// uint8_t Tx500Msg[12];
-// uint8_t Tx500MsgReal[12];
-// extern uint8_t DMA2_Stream0_TxStatus;
 void Task_500ms_Entry(void)
 {
 	LOG_RELEASE("This is a 500ms message\n");
 	// I2C_Test_2Byte();
-//	I2C_Test_TwoByte();
+	// I2C_Test_TwoByte();
 	// uint8_t tsLen = snprintf(Tx500Msg, sizeof(Tx500Msg), "%010u\n", OS_Tick1ms);
 	// HAL_DMA_Start_IT(&hdma_memtomem_dma2_stream0, Tx500Msg, Tx500MsgReal, tsLen);
 	// DMA2_Stream0_TxStatus = 0;
@@ -76,9 +51,11 @@ void Task_500ms_Entry(void)
 	// LOG_RELEASE("SPI Tx Cpt: %d.\n", SPI_Tx_Cpt);
 	// LOG_RELEASE("LCD Tx Cpt: %d.\n", LCD_Tx_Cpt);
 	// OLED_task();
-	// Lcd_Task();
+	Lcd_Display();
+	// OLED_Display();
 	RESET_500MS_TASK;
 }
+
 uint8_t ret0 = 0;
 void Task_1000ms_Entry(void)
 {
@@ -87,7 +64,7 @@ void Task_1000ms_Entry(void)
 	// I2C_Test1();
 	// Tower_Around_Test();
 	// Tower_GreenLed_Test();
-	GreenLed_Test();
+	// GreenLed_Test();
 	// Led_task();
 	// Bsp_AdcValuePrint();
 	RESET_1000MS_TASK;
@@ -99,12 +76,9 @@ void OS_Init(void)
 	HAL_UARTEx_ReceiveToIdle_DMA(RECEIVE_COMPORT, RxMsg, RX_MESSAGE_LEN);
 	Tower_Init();
 	// Bsp_AdcStart();
-	// OLED_Init();
 	Lcd_Init();
-	LCD_LED_SET;
-	Lcd_Clear(BLACK);
-	// Lcd_Clear(WHITE);
-	HAL_Delay(500);
+	// OLED_Init();
+	// HAL_Delay(500);
 	SET_1000MS_TASK;
 }
 

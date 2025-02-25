@@ -20,6 +20,7 @@
 #include "main.h"
 #include "dma.h"
 #include "i2c.h"
+#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -27,7 +28,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "task_bsp.h"
-#include "Lcd_bmp.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -96,6 +96,7 @@ int main(void)
   MX_TIM3_Init();
   MX_I2C1_Init();
   MX_TIM5_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   OS_Init();
   /* USER CODE END 2 */
@@ -105,6 +106,10 @@ int main(void)
   while (1)
   {
     Start_OS();
+    // Lcd_WriteData(0x55);
+    // delay_ms(10);
+    // Lcd_WriteData(0x66);
+    // delay_ms(10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

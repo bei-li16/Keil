@@ -1,3 +1,0 @@
-../BSP/Src/bsp_adc.c:12:6:Bsp_AdcStart	1
-../BSP/Src/bsp_adc.c:19:6:Bsp_AdcValuePrint	1
-../BSP/Src/bsp_adc.c:31:6:HAL_ADC_ConvCpltCallback	1

@@ -1,6 +1,0 @@
-../BSP/Src/tools_bsp.c:15:6:Msg_Init	4	static
-../BSP/Src/tools_bsp.c:24:6:Msg_Copy	16	static
-../BSP/Src/tools_bsp.c:54:6:Msg_Send	8	static
-../BSP/Src/tools_bsp.c:73:10:DEBUG_PRINTF	32	static
-../BSP/Src/tools_bsp.c:114:6:HAL_UARTEx_RxEventCallback	16	static
-../BSP/Src/tools_bsp.c:124:6:HAL_UART_TxCpltCallback	16	static

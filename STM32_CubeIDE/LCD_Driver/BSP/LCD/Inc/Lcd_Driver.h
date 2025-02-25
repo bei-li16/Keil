@@ -9,6 +9,7 @@
 #define LCD_INC_LCD_DRIVER_H_
 
 #include "gpio.h"
+#include "spi.h"
 
 #define X_MAX_PIXEL	        128
 #define Y_MAX_PIXEL	        128
@@ -23,10 +24,13 @@
 #define GRAY1               0x8410      	    //灰色1      00000 000000 00000
 #define GRAY2               0x4208      	    //灰色2  1111111111011111
 
-
+#define 	        LCD_SPI 	                        hspi1
 #define 	        STD_ON 				                1
 #define 	        STD_OFF 			                0
-#define             VIRTUAL_SPI_LCD 					STD_ON	//use SPI or GPIO to drive LCD
+#define             VIRTUAL_SPI_LCD 					STD_OFF	//use SPI or GPIO to drive LCD
+#define             SPI_TRANSMIT_DMA 			        STD_OFF
+#define             SPI_TRANSMIT_IT 			        STD_OFF
+#define             SPI_TRANSMIT_IM 			        STD_ON
 
 #if (VIRTUAL_SPI_LCD == STD_ON)
 
@@ -41,13 +45,14 @@
 #define 			LCD_LED_SET 					HAL_GPIO_WritePin(LCD_LED_GPIO_Port, LCD_LED_Pin, GPIO_PIN_SET)
 #define 			LCD_RS_CLR 					    HAL_GPIO_WritePin(LCD_RS_GPIO_Port, LCD_RS_Pin, GPIO_PIN_RESET)
 #define 			LCD_RS_SET 					    HAL_GPIO_WritePin(LCD_RS_GPIO_Port, LCD_RS_Pin, GPIO_PIN_SET)
-#define 			LCD_RST_SET 		 			HAL_GPIO_WritePin(LCD_RST_GPIO_Port, LCD_RST_Pin, GPIO_PIN_RESET)
-#define 			LCD_RST_CLR  					HAL_GPIO_WritePin(LCD_RST_GPIO_Port, LCD_RST_Pin, GPIO_PIN_SET)
-#define 			LCD_CS_SET 		 			    HAL_GPIO_WritePin(LCD_CS_GPIO_Port, LCD_CS_Pin, GPIO_PIN_RESET)
-#define 			LCD_CS_CLR  					HAL_GPIO_WritePin(LCD_CS_GPIO_Port, LCD_CS_Pin, GPIO_PIN_SET)
+#define 			LCD_RST_SET 		 			HAL_GPIO_WritePin(LCD_RST_GPIO_Port, LCD_RST_Pin, GPIO_PIN_SET)
+#define 			LCD_RST_CLR  					HAL_GPIO_WritePin(LCD_RST_GPIO_Port, LCD_RST_Pin, GPIO_PIN_RESET)
+#define 			LCD_CS_SET 		 			    HAL_GPIO_WritePin(LCD_CS_GPIO_Port, LCD_CS_Pin, GPIO_PIN_SET)
+#define 			LCD_CS_CLR  					HAL_GPIO_WritePin(LCD_CS_GPIO_Port, LCD_CS_Pin, GPIO_PIN_RESET)
 
 
 // void LCD_GPIO_Init(void);
+void SPI_WriteData(uint8_t Data);
 void Lcd_WriteIndex(uint8_t Index);
 void Lcd_WriteData(uint8_t Data);
 void Lcd_WriteReg(uint8_t Index,uint8_t Data);
@@ -66,6 +71,7 @@ void LCD_DrawBMP_8BIT(const unsigned char *p);
 void LCD_DrawBMP_16BIT(const unsigned short *p);
 void LCD_DrawBMP_BAPBIT(const unsigned short *p);
 
+void Lcd_Display(void);
 //end
 
 #endif /* LCD_INC_LCD_DRIVER_H_ */

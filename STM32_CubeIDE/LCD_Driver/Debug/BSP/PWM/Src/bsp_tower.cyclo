@@ -1,7 +1,0 @@
-../BSP/PWM/Src/bsp_tower.c:9:6:Tower_Init	1
-../BSP/PWM/Src/bsp_tower.c:14:6:Tower_SetToZero	1
-../BSP/PWM/Src/bsp_tower.c:19:6:Tower_SetTo90	1
-../BSP/PWM/Src/bsp_tower.c:24:6:Tower_SetTo180	1
-../BSP/PWM/Src/bsp_tower.c:29:6:Tower_Around_Test	1
-../BSP/PWM/Src/bsp_tower.c:50:6:Tower_GreenLed_Test	2
-../BSP/PWM/Src/bsp_tower.c:61:6:GreenLed_Test	3
