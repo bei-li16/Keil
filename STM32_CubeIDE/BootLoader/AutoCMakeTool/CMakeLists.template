@@ -1,0 +1,83 @@
+# =============================================================================
+# STM32 Project Template (User-defined settings)
+# =============================================================================
+# CMake最低版本要求
+cmake_minimum_required(VERSION 3.12)
+
+# 定义可配置变量（设置默认值）
+set(PROJECT_NAME "BootLoader" CACHE STRING "Project name")
+set(PROJECT_VERSION "1.0.0" CACHE STRING "Project version")
+set(CHIP_MACRO "STM32F429xx" CACHE STRING "Chip macro definition")
+set(BUILD_TYPE "Debug" CACHE STRING "Build type (Debug/Release)")
+
+# 项目名称和版本
+project(${PROJECT_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C ASM)
+
+# 添加工具链文件（关键！）
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/AutoCMakeTool/arm-gcc-toolchain.cmake)
+
+# 源文件配置------------------------------------------
+# 启动文件（根据实际路径调整）
+set(STARTUP_SCRIPT "${CMAKE_SOURCE_DIR}/STM32F429IGTX_FLASH.ld")
+
+# =============================================================================
+# Auto-generated Section (DO NOT EDIT MANUALLY)
+# =============================================================================
+# AUTO_GENERATED_SOURCES
+# AUTO_GENERATED_INCLUDES
+
+# 编译选项--------------------------------------------
+add_compile_options(
+    -mcpu=cortex-m4
+    -std=gnu11
+    -g3
+    -DDEBUG
+    -DSTM32F429xx  # 芯片型号宏定义
+    -DUSE_HAL_DRIVER
+    -O0
+    -ffunction-sections
+    -fdata-sections
+    -Wall
+    -fstack-usage
+    -fcyclomatic-complexity
+    --specs=nano.specs
+    -mfpu=fpv4-sp-d16
+    -mfloat-abi=hard
+    -mthumb
+)
+
+# 链接选项--------------------------------------------
+add_link_options(
+    -mcpu=cortex-m4
+    -T${STARTUP_SCRIPT}
+    -Wl,--gc-sections
+    -static
+    --specs=nano.specs
+    -mfpu=fpv4-sp-d16
+    -mfloat-abi=hard
+    -mthumb
+    -Wl,--start-group
+    -lc
+    -lm
+    -Wl,--end-group
+    # -Wl,-Map="${BootLoader}.map"
+)
+
+# 生成可执行文件--------------------------------------
+add_executable(${PROJECT_NAME}.elf 
+    ${SOURCES}
+)
+
+# 生成辅助文件----------------------------------------
+add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O ihex ${PROJECT_NAME}.elf ${PROJECT_NAME}.hex
+    COMMAND ${CMAKE_OBJCOPY} -O binary ${PROJECT_NAME}.elf ${PROJECT_NAME}.bin
+    COMMAND ${CMAKE_OBJCOPY} -O srec ${PROJECT_NAME}.elf ${PROJECT_NAME}.srec
+    COMMENT "Generating HEX/BIN/SREC files..."
+)
+
+# 显示尺寸信息----------------------------------------
+add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
+    COMMAND arm-none-eabi-size ${PROJECT_NAME}.elf
+    COMMENT "Memory usage:"
+)

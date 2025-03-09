@@ -1,0 +1,11 @@
+// flash.jlink
+device STM32F429IG       // 设备型号
+speed 1000               // 接口速度 (kHz)
+JTAGConf 0, 0            // 指定设备位置
+if JTAG                  // 调试接口类型
+connect                  // 连接目标
+halt                     // 暂停目标
+loadfile ..\build\BootLoader.hex  // 下载 HEX 文件
+r                        // 复位目标
+g                        // 开始运行
+q                        // 退出
