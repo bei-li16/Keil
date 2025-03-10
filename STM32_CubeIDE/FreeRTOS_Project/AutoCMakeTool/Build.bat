@@ -27,14 +27,37 @@ set "PROJECT_ROOT=%~dp0..\"
 set "BUILD_DIR=%PROJECT_ROOT%build"
 @REM 定义构建类型
 set "BUILD_TYPE=Release"
-@REM 定义构建类型
+@REM 定义构建CMakeLists.txt文件
 set "OUTPUT_MAKELIST=%PROJECT_ROOT%CMakeLists.txt"
 @REM 定义工具链文件
 set "TOOLCHAIN_FILE=%BUILD_TOOL_DIR%arm-gcc-toolchain.cmake"
 @REM 定义工程名称
-set "PROJECT_NAME=BootLoader"
+set "PROJECT_NAME=FreeRTOS_STM32F429"
 @REM 定义工程版本
 set "PROJECT_VERSION=2.0.0"
+@REM 定义构建链接文件
+set "LINKER_FILE_DEFAULT=%PROJECT_ROOT%STM32F429IGTX_FLASH.ld"
+set "LINKER_FILEA=%PROJECT_ROOT%STM32F429IGTX_FLASH_BANKA.ld"
+set "LINKER_FILEB=%PROJECT_ROOT%STM32F429IGTX_FLASH_BANKB.ld"
+
+@REM 参数处理
+if "%1"=="A" (
+    set "LINKER_FILE=%LINKER_FILEA%"
+    set "PROJECT_NAME=FreeRTOS_STM32F429_BANKA"
+    set "BANK_MACRO=USE_BANK_A"
+) else if "%1"=="B" (
+    set "LINKER_FILE=%LINKER_FILEB%"
+    set "PROJECT_NAME=FreeRTOS_STM32F429_BANKB"
+    set "BANK_MACRO=USE_BANK_B"
+) else if "%1"=="ALL" (
+    set "LINKER_FILE=%LINKER_FILEB%"
+    set "PROJECT_NAME=FreeRTOS_STM32F429_BANKA"
+    set "BANK_MACRO=USE_BANK_A"
+) else (
+    set "LINKER_FILE=%LINKER_FILE_DEFAULT%"
+    set "PROJECT_NAME=FreeRTOS_STM32F429"
+    set "BANK_MACRO=USE_BANK_DEFAULT"
+)
 
 REM ==============================================================================
 REM ################  根据cmake模板自动生成CMakelists.txt          ################
@@ -59,7 +82,9 @@ cmake   -S %PROJECT_ROOT% -B %BUILD_DIR% -G "MinGW Makefiles" ^
         -DCMAKE_TOOLCHAIN_FILE=%TOOLCHAIN_FILE% ^
         --fresh ^
         -DPROJECT_NAME=%PROJECT_NAME% ^
-        -DPROJECT_VERSION=%PROJECT_VERSION% 
+        -DPROJECT_VERSION=%PROJECT_VERSION% ^
+        -DLINK_SCRIPT=%LINKER_FILE% ^
+        -DBANK_MACRO=%BANK_MACRO%
 
 
 REM ==============================================================================
@@ -78,6 +103,7 @@ if errorlevel 1 (
 ) else (
   del /f %OUTPUT_MAKELIST%
   echo =========== SUCCESS: Build project successfully!  ===========
+  copy /Y "%BUILD_DIR%\%PROJECT_NAME%.hex" "%BUILD_TOOL_DIR%" > nul
 )
 popd
 
@@ -85,10 +111,14 @@ popd
 REM ==============================================================================
 REM ################  调用cmake --build执行编译动作                ################
 REM ==============================================================================
-@REM download hex file to board
-call download.bat
+REM download hex file to board
+call download.bat "%BUILD_TOOL_DIR%%PROJECT_NAME%.hex"
 
+REM ==============================================================================
+REM ################  清理临时文件                                 ################
+REM ==============================================================================
+del /f "%BUILD_TOOL_DIR%*.hex"
+echo ========================== CMake auto build finished! =======================
 endlocal
-echo CMake auto build finished!
 exit /b 0
 ```
