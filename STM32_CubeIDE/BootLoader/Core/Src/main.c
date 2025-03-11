@@ -110,7 +110,8 @@ int main(void)
     HAL_Delay(1000);
     LOG_RELEASE("Jump to App\n");
     HAL_Delay(1000);
-    jump_to_app(0x08008000);
+    // jump_to_app(0x08008000);
+    jump_to_app(0x08084000);
     HAL_Delay(1000);
     /* USER CODE END WHILE */
 

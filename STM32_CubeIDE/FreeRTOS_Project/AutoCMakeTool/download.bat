@@ -25,7 +25,7 @@ set COMMAND_FILE=%BUILD_TOOL_DIR%\STM32_commands.jlink
 
 
 @REM Download hex file to program flash
-echo ============== Download hex file to STM32 ==============
+echo ============== Download %HEX_FILE% to STM32 ==============
 echo %2
 @REM %JLINK_PATH% -CommandFile %JLINK_SCRIPT% -AutoConnect 1 -ExitOnError 1 -NoGui 1
 %JLINK_PATH% -CommandFile %COMMAND_FILE% -AutoConnect 1 -ExitOnError 1 -NoGui 1

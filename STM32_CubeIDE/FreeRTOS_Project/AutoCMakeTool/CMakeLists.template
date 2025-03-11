@@ -11,9 +11,9 @@ set(CHIP_MACRO "STM32F429xx" CACHE STRING "Chip macro definition")
 set(BUILD_TYPE "Debug" CACHE STRING "Build type (Debug/Release)")
 set(LINK_SCRIPT "${CMAKE_SOURCE_DIR}/STM32F429IGTX_FLASH.ld" CACHE STRING "Link script file")
 set(BANK_MACRO "USE_BANK_DEFAULT" CACHE STRING "Bank macro definition")
-message(LINK_SCRIPT: ${LINK_SCRIPT})
 message(BUILD_TYPE: ${BUILD_TYPE})
 message(BANK_MACRO: ${BANK_MACRO})
+message(LINK_SCRIPT: ${LINK_SCRIPT})
 
 # 项目名称和版本
 project(${PROJECT_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C ASM)

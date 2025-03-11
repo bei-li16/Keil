@@ -55,9 +55,9 @@ void Task1000ms(void *argument)
     for(;;) 
     {
 #if defined(USE_BANK_A)
-        LOG_RELEASE("Task1000ms in BankA\n");
+        LOG_RELEASE("Task1000ms in BankA 2\n");
 #elif defined(USE_BANK_B)
-        LOG_RELEASE("Task1000ms in BankB\n");
+        LOG_RELEASE("Task1000ms in BankB 2\n");
 #else
         LOG_RELEASE("Task1000ms in default\n");
 #endif

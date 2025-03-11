@@ -31,33 +31,43 @@ set "BUILD_TYPE=Release"
 set "OUTPUT_MAKELIST=%PROJECT_ROOT%CMakeLists.txt"
 @REM 定义工具链文件
 set "TOOLCHAIN_FILE=%BUILD_TOOL_DIR%arm-gcc-toolchain.cmake"
-@REM 定义工程名称
-set "PROJECT_NAME=FreeRTOS_STM32F429"
 @REM 定义工程版本
 set "PROJECT_VERSION=2.0.0"
+
+@REM 定义工程名称
 @REM 定义构建链接文件
-set "LINKER_FILE_DEFAULT=%PROJECT_ROOT%STM32F429IGTX_FLASH.ld"
-set "LINKER_FILEA=%PROJECT_ROOT%STM32F429IGTX_FLASH_BANKA.ld"
-set "LINKER_FILEB=%PROJECT_ROOT%STM32F429IGTX_FLASH_BANKB.ld"
+:SET_USE_BANK_A
+    set "LINKER_FILE=%PROJECT_ROOT%STM32F429IGTX_FLASH_BANKA.ld"
+    set "PROJECT_NAME=FreeRTOS_STM32F429_BANKA"
+    set "BANK_MACRO=USE_BANK_A"
+    goto :CONTINUE_BUILD
+
+:SET_USE_BANK_B
+    set "LINKER_FILE=%PROJECT_ROOT%STM32F429IGTX_FLASH_BANKB.ld"
+    set "PROJECT_NAME=FreeRTOS_STM32F429_BANKB"
+    set "BANK_MACRO=USE_BANK_B"
+    goto :CONTINUE_BUILD
+
+:SET_USE_BANK_DEFAULT
+    set "LINKER_FILE=%PROJECT_ROOT%STM32F429IGTX_FLASH.ld"
+    set "PROJECT_NAME=FreeRTOS_STM32F429"
+    set "BANK_MACRO=USE_BANK_DEFAULT"
+    goto :CONTINUE_BUILD
 
 @REM 参数处理
 if "%1"=="A" (
-    set "LINKER_FILE=%LINKER_FILEA%"
-    set "PROJECT_NAME=FreeRTOS_STM32F429_BANKA"
-    set "BANK_MACRO=USE_BANK_A"
+    goto :SET_USE_BANK_A
 ) else if "%1"=="B" (
-    set "LINKER_FILE=%LINKER_FILEB%"
-    set "PROJECT_NAME=FreeRTOS_STM32F429_BANKB"
-    set "BANK_MACRO=USE_BANK_B"
+    goto :SET_USE_BANK_B
 ) else if "%1"=="ALL" (
-    set "LINKER_FILE=%LINKER_FILEB%"
-    set "PROJECT_NAME=FreeRTOS_STM32F429_BANKA"
-    set "BANK_MACRO=USE_BANK_A"
+    goto :SET_USE_BANK_A
 ) else (
-    set "LINKER_FILE=%LINKER_FILE_DEFAULT%"
-    set "PROJECT_NAME=FreeRTOS_STM32F429"
-    set "BANK_MACRO=USE_BANK_DEFAULT"
+    goto :SET_USE_BANK_DEFAULT
 )
+
+:CONTINUE_BUILD
+    set "HEX_FILE=%BUILD_DIR%\%PROJECT_NAME%.hex"
+
 
 REM ==============================================================================
 REM ################  根据cmake模板自动生成CMakelists.txt          ################
@@ -104,6 +114,10 @@ if errorlevel 1 (
   del /f %OUTPUT_MAKELIST%
   echo =========== SUCCESS: Build project successfully!  ===========
   copy /Y "%BUILD_DIR%\%PROJECT_NAME%.hex" "%BUILD_TOOL_DIR%" > nul
+  if "%1"=="ALL" (
+    if %BANK_MACRO% == USE_BANK_A goto :SET_USE_BANK_B
+    if %BANK_MACRO% == USE_BANK_B call %PYTHON_DIR%\python.exe %BUILD_TOOL_DIR%merge_hex.py %BUILD_TOOL_DIR%FreeRTOS_STM32F429_BANKA.hex %BUILD_TOOL_DIR%FreeRTOS_STM32F429_BANKB.hex --o %BUILD_TOOL_DIR%merge.hex
+  )
 )
 popd
 
@@ -112,7 +126,11 @@ REM ============================================================================
 REM ################  调用cmake --build执行编译动作                ################
 REM ==============================================================================
 REM download hex file to board
-call download.bat "%BUILD_TOOL_DIR%%PROJECT_NAME%.hex"
+if "%1"=="ALL" (
+    call %BUILD_TOOL_DIR%download.bat "%BUILD_TOOL_DIR%merge.hex"
+) else (
+    call download.bat "%BUILD_TOOL_DIR%%PROJECT_NAME%.hex"
+)
 
 REM ==============================================================================
 REM ################  清理临时文件                                 ################

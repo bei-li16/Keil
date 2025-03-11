@@ -104,3 +104,4 @@ if __name__ == "__main__":
     
     merge_hex_files(args.file1, args.file2, args.output)
     print(f"Merged HEX file saved to: {args.output}")
+    
