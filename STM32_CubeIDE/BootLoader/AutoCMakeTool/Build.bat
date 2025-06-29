@@ -86,7 +86,7 @@ REM ============================================================================
 REM ################  调用cmake --build执行编译动作                ################
 REM ==============================================================================
 @REM download hex file to board
-call download.bat
+@REM call download.bat
 
 endlocal
 echo CMake auto build finished!

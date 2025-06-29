@@ -39,7 +39,9 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+#define     BOOT_APP_START_ADDR_A    0x08008000
+#define     BOOT_APP_START_ADDR_B    0x08084000
+#define     BOOT_TIMEOUT             10 // 10s
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -83,7 +85,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  __gcov_init(); // Initialize coverage data structure
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -93,6 +95,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   Log_Init();
   Led_Init();
+  __gcov_exit(); // Exit coverage data structure
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -100,9 +103,9 @@ int main(void)
   int i = 0;
   while (1)
   {
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < BOOT_TIMEOUT; i++)
     {
-        LOG_RELEASE("Hello World %d\n",10-i);
+        LOG_RELEASE("Auto boot BANK after %d seconds.\n",BOOT_TIMEOUT-i);
         HAL_Delay(1000);
         LED_RED_TOGGLE;
     }
@@ -110,8 +113,8 @@ int main(void)
     HAL_Delay(1000);
     LOG_RELEASE("Jump to App\n");
     HAL_Delay(1000);
-    // jump_to_app(0x08008000);
-    jump_to_app(0x08084000);
+    // jump_to_app(BOOT_APP_START_ADDR_A);
+    jump_to_app(BOOT_APP_START_ADDR_B);
     HAL_Delay(1000);
     /* USER CODE END WHILE */
 

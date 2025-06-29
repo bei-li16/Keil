@@ -10,7 +10,8 @@
 typedef void (*AppEntry)(void);  // 无参数、无返回值的函数指针
 
 /* 跳转函数 */
-void jump_to_app(uint32_t appAddr) {
+void jump_to_app(uint32_t appAddr) 
+{
     // 1. 关闭所有中断
     __disable_irq();
     for (int i = 0; i < 8; i++) {

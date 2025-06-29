@@ -11,5 +11,6 @@
 #include "bsp_log.h"
 #include "bsp_led.h"
 #include "bsp_boot.h"
+#include "bsp_gcovtool.h"
 
 #endif /* BSPS_H_ */
