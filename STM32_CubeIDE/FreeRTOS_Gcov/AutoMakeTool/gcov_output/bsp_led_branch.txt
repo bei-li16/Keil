@@ -1,0 +1,7 @@
+No executable lines
+build.gcno:cannot open notes file
+build.gcda:cannot open data file, assuming not executed
+';' file is already processed
+'C:/ST/STM32CubeIDE_1.18.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin\\arm-none-eabi-gcov' file is already processed
+'build/bsp_led.gcda' file is already processed
+';' file is already processed

@@ -1,0 +1,73 @@
+# Build directories
+build/
+Build/
+Debug/
+Release/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+!gcc.cmake
+!download.jlink
+
+# Compiled Object files
+*.o
+*.obj
+*.ko
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# Executables
+*.elf
+*.hex
+*.bin
+*.exe
+*.out
+*.app
+
+# Map files
+*.map
+
+# Debug files
+*.d
+*.su
+*.idb
+*.pdb
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# STM32CubeIDE specific
+.settings/
+.metadata/
+.recommenders/
+.cproject
+.project
+.mxproject
+
+# AutoCMakeTool generated files
+AutoCMakeTool/CMakeLists.txt
+
+# Clean scripts (removed, kept for reference)
+clean.bat
+clean.sh
+check_env.bat
+check_env.sh

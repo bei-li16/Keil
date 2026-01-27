@@ -1,0 +1,3 @@
+No executable lines
+build/%~nf.gcno:cannot open notes file
+build/%~nf.gcda:cannot open data file, assuming not executed

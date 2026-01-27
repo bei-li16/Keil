@@ -85,7 +85,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  __gcov_init(); // Initialize coverage data structure
+//  __gcov_init(); // Initialize coverage data structure
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -95,7 +95,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   Log_Init();
   Led_Init();
-  __gcov_exit(); // Exit coverage data structure
+//  __gcov_exit(); // Exit coverage data structure
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -113,7 +113,7 @@ int main(void)
     HAL_Delay(1000);
     LOG_RELEASE("Jump to App\n");
     HAL_Delay(1000);
-    // jump_to_app(BOOT_APP_START_ADDR_A);
+//     jump_to_app(BOOT_APP_START_ADDR_A );
     jump_to_app(BOOT_APP_START_ADDR_B);
     HAL_Delay(1000);
     /* USER CODE END WHILE */

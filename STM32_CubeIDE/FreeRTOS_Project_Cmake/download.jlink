@@ -1,0 +1,10 @@
+device STM32F429IG
+speed 4000
+JTAGConf 0, 0
+if JTAG
+connect
+halt
+loadfile build/build/FreeRTOS_Project.hex
+reset
+go
+exit

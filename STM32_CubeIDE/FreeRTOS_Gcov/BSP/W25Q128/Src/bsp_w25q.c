@@ -493,7 +493,7 @@ void SPI_Flash_PowerDown(void)
 
 void W25Q_ReadID_Test(void)
 {
-    static Test_times = 0;
+    static uint32_t Test_times = 0;
     uint32_t FlashID = 0;
     uint32_t DeviceID = 0;
     if(Test_times < W25Q_TEST_1_TIMES)

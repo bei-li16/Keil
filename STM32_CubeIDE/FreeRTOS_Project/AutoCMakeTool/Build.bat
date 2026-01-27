@@ -7,11 +7,11 @@ REM ============================================================================
 @REM set cmake path
 set "CMAKE_DIR=C:\Program Files\CMake\bin"
 @REM set make path
-set "MAKE_DIR=C:\ST\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.make.win32_2.2.0.202409170845\tools\bin"
+set "MAKE_DIR=C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.make.win32_2.2.0.202409170845\tools\bin"
 @REM set compiler path
-set "COMPILER_DIR=C:\ST\STM32CubeIDE_1.17.0\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130\tools\bin"
+set "COMPILER_DIR=C:\ST\STM32CubeIDE_1.18.1\STM32CubeIDE\plugins\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344\tools\bin"
 @REM set python path
-set "PYTHON_DIR=C:\Users\18283\AppData\Local\Programs\Python\Python312"
+set "PYTHON_DIR=C:\Users\18283\AppData\Local\Programs\Python\Python313"
 @REM set PATH
 set PATH=%COMPILER_DIR%;%MAKE_DIR%;%CMAKE_DIR%;%PYTHON_DIR%;%PATH%
 
@@ -77,7 +77,12 @@ set GEN_CMAKE_TEMPLATE=%BUILD_TOOL_DIR%CMakeLists.template
 @REM 清理旧构建
 if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
 @REM python脚本自动生成CMakeLists.txt
+echo =========== Generating CMakeLists.txt from template ==========
+echo Project Root: %PROJECT_ROOT%
+echo Template: %GEN_CMAKE_TEMPLATE%
+echo Output Makefile: %OUTPUT_MAKELIST%
 call %PYTHON_DIR%\python.exe %BUILD_TOOL_DIR%gen_cmake.py %PROJECT_ROOT% %GEN_CMAKE_TEMPLATE% %OUTPUT_MAKELIST%
+echo =========== CMakeLists.txt generated successfully! ==========
 
 
 REM ==============================================================================

@@ -1,0 +1,10 @@
+device STM32F429IG
+speed 4000
+JTAGConf 0, 0
+if JTAG
+connect
+halt
+loadfile "G:\Data\GitFiles\Keil\STM32_CubeIDE\FreeRTOS_Project\AutoCMakeTool\merge.hex"
+reset
+go
+exit

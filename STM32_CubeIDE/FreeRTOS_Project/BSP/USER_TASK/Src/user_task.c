@@ -36,7 +36,7 @@ void Task100ms(void *argument)
     const TickType_t xPeriod = pdMS_TO_TICKS(TASK100MS_DELAY);
     for(;;) 
     {
-        // LOG_RELEASE("Task100ms\n");
+        LOG_RELEASE("Task100ms\n");
         Led_Task();
 #if (VTASKDELAYUNTIL == STD_ON)
         osDelayUntil(&xLastWakeTime, xPeriod);
