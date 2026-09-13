@@ -3,7 +3,7 @@
 """
 uart_capture.py - 调试串口抓取:目标固件的 UART 输出带时间戳落盘并回显。
 
-用法:
+用法(dt.bat 的 uart 子命令封装了本脚本,也可直接运行):
     python uart_capture.py                          # 用 config/paths.bat 里的默认口
     python uart_capture.py --port COM7 --baud 115200 --out uart.log
     python uart_capture.py --list                   # 列出可用串口后退出
@@ -26,8 +26,8 @@ except ImportError:
 def default_port():
     """从 tools/config/paths.bat 解析 UART_PORT 默认值;读不到回退 COM5。"""
     import re, os
-    # 本文件在 tools\serial\ 下,.. 即 tools 根,再进 config
-    p = os.path.join(os.path.dirname(__file__), "..", "config", "paths.bat")
+    # 本文件在 tools 根目录,config/paths.bat 在其下
+    p = os.path.join(os.path.dirname(__file__), "config", "paths.bat")
     try:
         # paths.bat 是 GBK 编码,errors="replace" 保证读取不炸
         with open(p, encoding="utf-8", errors="replace") as f:
