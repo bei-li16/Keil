@@ -22,6 +22,9 @@ REM ==========================================================================
  REM   probe-reset                  probe recovery (mandatory for cloned J-Link V8)
  REM   run                          clear leftover breakpoints/watchpoints, reset and go
  REM   server-stop                  stop J-Link/OpenOCD GDB Server
+ REM   go                           resume a halted target without reset (RAM preserved)
+ REM   bp <hexaddr> [ms]            one-shot breakpoint via native JLink (gdb route broken on clones)
+ REM   step                         single-step one instruction (target left halted)
  REM ==========================================================================
 
 REM ---- load config (shared by all subcommands; help also reports current config) ----
@@ -51,11 +54,16 @@ if /i "%SUB%"=="halt"       goto S_HALT
 if /i "%SUB%"=="probe-reset" goto S_PROBERESET
 if /i "%SUB%"=="run"        goto S_RUN
 if /i "%SUB%"=="server-stop" goto S_SERVERSTOP
+if /i "%SUB%"=="go"         goto S_GO
+if /i "%SUB%"=="bp"         goto S_BP
+if /i "%SUB%"=="step"       goto S_STEP
 goto USAGE
 
 REM ==================== check: J-Link link self-test ====================
 :S_CHECK
 call :NEED_JLINK || exit /b 1
+ REM  exclusive probe access: a running GDB Server on the same probe corrupts the link
+call :STOP_GDBSERVER_QUIET
  REM  generate Commander commands on the fly: > overwrites the first line, >>
  REM  appends; never put a REM at the end of these lines
 set "CMDF=%TEMP%\dt_check.jlink"
@@ -79,6 +87,8 @@ exit /b 0
 REM ==================== flash: J-Link flash ====================
 :S_FLASH
 call :NEED_JLINK || exit /b 1
+ REM  exclusive probe access: flashing while a GDB Server runs corrupts the link
+call :STOP_GDBSERVER_QUIET
 set "HOLD=0"
 if /i "%~1"=="--hold" set "HOLD=1"
 if /i "%~1"=="--hold" shift
@@ -168,9 +178,11 @@ goto RD_LOOP
 :RD_DONE
  REM  detach: disconnect and let the target run; -batch exits automatically here
 >> "%CMDF%" echo detach
-"%GDB%" "%ELF%" -batch -x "%CMDF%"
+"%GDB%" "%ELF%" -batch -x "%CMDF%" > "%TEMP%\dt_read_out.log" 2>&1
+type "%TEMP%\dt_read_out.log"
 if errorlevel 1 (
     echo [read][ERROR] read failed: make sure the server runs in the background and the variable exists in this elf
+    findstr /C:"Cannot access memory" "%TEMP%\dt_read_out.log" >nul && echo [read][HINT] probe likely degraded ^(cloned J-Link^), recover with: dt probe-reset
     exit /b 1
 )
 exit /b 0
@@ -249,9 +261,11 @@ goto GB_LOOP
 :GB_DONE
  REM  detach releases the target - same "use and return" semantics as read/watch
 >> "%CMDF%" echo detach
-"%GDB%" "%ELF%" -batch -x "%CMDF%"
+"%GDB%" "%ELF%" -batch -x "%CMDF%" > "%TEMP%\dt_gdb_out.log" 2>&1
+type "%TEMP%\dt_gdb_out.log"
 if errorlevel 1 (
     echo [gdb][ERROR] execution failed: make sure the server runs in the background and the command/symbols are correct
+    findstr /C:"Cannot access memory" "%TEMP%\dt_gdb_out.log" >nul && echo [gdb][HINT] probe likely degraded ^(cloned J-Link^), recover with: dt probe-reset
     exit /b 1
 )
 exit /b 0
@@ -399,6 +413,84 @@ tasklist 2>nul | findstr /I "JLinkGDBServerCL.exe openocd.exe" >nul && (
 echo [server-stop][OK] J-Link/OpenOCD GDB Server stopped, port released
 exit /b 0
 
+REM ==================== go: resume halted target (no reset) ====================
+:S_GO
+call :NEED_JLINK || exit /b 1
+call :STOP_GDBSERVER_QUIET
+set "CMDF=%TEMP%\dt_go.jlink"
+>  "%CMDF%" echo connect
+>> "%CMDF%" echo %JLINK_DEVICE%
+>> "%CMDF%" echo %IF_LETTER%
+>> "%CMDF%" echo %JLINK_SPEED%
+>> "%CMDF%" echo g
+>> "%CMDF%" echo qc
+echo [go] resuming target (no reset, RAM state preserved)...
+"%JLINK_DIR%\JLink.exe" -if %JLINK_IF% -speed %JLINK_SPEED% -device %JLINK_DEVICE% -CommandFile "%CMDF%" -NoGui 1 > "%TEMP%\dt_go.log" 2>&1
+echo [go][OK] target resumed; note dt go does NOT clear leftover BP/WP, use dt run for that
+exit /b 0
+
+REM ==================== bp: one-shot breakpoint (native JLink) ====================
+:S_BP
+call :NEED_JLINK || exit /b 1
+call :STOP_GDBSERVER_QUIET
+set "ADDR=%~1"
+if "%ADDR%"=="" (
+    echo [bp][ERROR] usage: dt bp ^<hex address^> [wait ms, default 3000]
+    echo [bp]        resolve the address first, e.g.: nm app.elf ^| findstr Task1000ms
+    exit /b 1
+)
+set "WAIT=%~2"
+if "%WAIT%"=="" set "WAIT=3000"
+ REM  normalize: strip the 0x/0X prefix; regs prints PC without it
+set "ADDR=%ADDR:0x=%"
+set "ADDR=%ADDR:0X=%"
+set "CMDF=%TEMP%\dt_bp.jlink"
+ REM  NOTE: no raw w4 scrub here - writing FP_COMP behind the DLL's back breaks
+ REM  its breakpoint state (verified: bp then never hits). Clear leftovers with
+ REM  dt run BEFORE dt bp instead; each bp session is clean on its own.
+>  "%CMDF%" echo connect
+>> "%CMDF%" echo %JLINK_DEVICE%
+>> "%CMDF%" echo %IF_LETTER%
+>> "%CMDF%" echo %JLINK_SPEED%
+>> "%CMDF%" echo h
+>> "%CMDF%" echo r
+>> "%CMDF%" echo setbp %ADDR%
+>> "%CMDF%" echo g
+>> "%CMDF%" echo Sleep %WAIT%
+>> "%CMDF%" echo h
+>> "%CMDF%" echo regs
+>> "%CMDF%" echo qc
+echo [bp] breakpoint at %ADDR%, waiting up to %WAIT% ms ...
+"%JLINK_DIR%\JLink.exe" -if %JLINK_IF% -speed %JLINK_SPEED% -device %JLINK_DEVICE% -CommandFile "%CMDF%" -NoGui 1 > "%TEMP%\dt_bp.log" 2>&1
+call :CHECK_JLINK_LOG "%TEMP%\dt_bp.log" bp || exit /b 1
+findstr /I /C:"PC = %ADDR%" "%TEMP%\dt_bp.log" >nul && (
+    echo [bp][OK] breakpoint HIT at %ADDR%, target left halted; dt step to walk, dt go to resume
+) || (
+    echo [bp][MISS] not hit within %WAIT% ms, target left halted where it was, log at %TEMP%\dt_bp.log; dt run to resume
+)
+exit /b 0
+
+REM ==================== step: single-step one instruction ====================
+:S_STEP
+call :NEED_JLINK || exit /b 1
+call :STOP_GDBSERVER_QUIET
+set "CMDF=%TEMP%\dt_step.jlink"
+>  "%CMDF%" echo connect
+>> "%CMDF%" echo %JLINK_DEVICE%
+>> "%CMDF%" echo %IF_LETTER%
+>> "%CMDF%" echo %JLINK_SPEED%
+>> "%CMDF%" echo h
+>> "%CMDF%" echo s
+>> "%CMDF%" echo regs
+>> "%CMDF%" echo qc
+echo [step] single-stepping one instruction ^(halts the target first if running^)...
+"%JLINK_DIR%\JLink.exe" -if %JLINK_IF% -speed %JLINK_SPEED% -device %JLINK_DEVICE% -CommandFile "%CMDF%" -NoGui 1 > "%TEMP%\dt_step.log" 2>&1
+call :CHECK_JLINK_LOG "%TEMP%\dt_step.log" step || exit /b 1
+ REM  show where the step landed
+findstr /C:"PC = " "%TEMP%\dt_step.log"
+echo [step][OK] stepped one instruction, target left halted; repeat dt step or dt go to resume
+exit /b 0
+
 REM ==================== help ====================
 :USAGE
 echo Usage: dt ^<subcommand^> [args...]
@@ -416,6 +508,9 @@ echo   halt                        halt the running target ^(dt run to resume^)
 echo   probe-reset                 probe recovery ^(mandatory for cloned J-Link V8^)
 echo   run                         clear leftover breakpoints/watchpoints, reset and go
 echo   server-stop                 stop J-Link/OpenOCD GDB Server and free the port
+echo   go                          resume a halted target without reset ^(RAM kept^)
+echo   bp ^<hexaddr^> [ms]           restart target, run until breakpoint ^(unreliable on clone probes^)
+echo   step                        single-step one instruction ^(disconnect auto-resumes after^)
 echo.
 echo Examples: dt flash build\app.hex
 echo           dt watch build\app.elf g_counter g_fsm_state
@@ -443,6 +538,11 @@ if not defined TOOLCHAIN_DIR (
 )
 if not exist "%TOOLCHAIN_DIR%\arm-none-eabi-gdb.exe" (
     echo [dt][ERROR] %TOOLCHAIN_DIR%\arm-none-eabi-gdb.exe not found
+    exit /b 1
+)
+ REM  read/watch/gdb talk to the GDB Server; fail fast with a precise hint if it is down
+tasklist 2>nul | findstr /I "JLinkGDBServerCL.exe" >nul || (
+    echo [dt][ERROR] J-Link GDB Server is not running, start it first: dt server
     exit /b 1
 )
 set "GDB=%TOOLCHAIN_DIR%\arm-none-eabi-gdb.exe"
