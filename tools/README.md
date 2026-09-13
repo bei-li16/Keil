@@ -30,12 +30,12 @@ tools/
 | `read` | `dt read <elf> <变量...>` | 一次性读变量值 | 一次性 |
 | `watch` | `dt watch <elf> <变量...>` | 硬件观察点盯变量(新值+调用栈) | 常驻 |
 | `gdb` | `dt gdb <elf> <gdb命令...>` | 任意 gdb 命令(每参数一条,自动初始化/断开) | 一次性 |
-| `halt` | `dt halt` | 暂停运行中的目标(LED 停闪即确认,实测停住可靠) | 状态保持 |
+| `halt` | `dt halt` | 暂停运行中的目标并跨会话保持(SetRestartOnClose,已实测) | 状态保持 |
 | `run` | `dt run` | 清 FPB/DWT 残留断点/观察点(含 FP_COMPn)后复位放行 | 一次性 |
 | `probe-reset` | `dt probe-reset` | 探针恢复(克隆 J-Link V8 退化时必跑) | 一次性 |
 | `go` | `dt go` | 恢复被暂停的目标(**不复位**,RAM 现场保留) | 一次性 |
 | `bp` | `dt bp <地址> [ms]` | 复位重启并跑到断点(**克隆探针上不可靠**,见 FAQ) | 一次性 |
-| `step` | `dt step` | 单步一条指令(断开后自动恢复运行,连续 step 是随机取样点) | 一次性 |
+| `step` | `dt step` | 单步一条指令并保持暂停(**可连续 dt step 顺序走代码**;步进 WFI 会阻塞到中断到来) | 一次性 |
 | `ocd-server` | `dt ocd-server` | OpenOCD GDB Server(端口 %OPENOCD_PORT%) | 常驻 |
 | `ocd-flash` | `dt ocd-flash <固件> [地址]` | OpenOCD 烧录(bin 必须给地址) | 一次性 |
 | `uart` | `dt uart [--port COM7] ...` | 串口抓取/定时统计(uart_capture.py 参数透传) | 常驻/定时 |
@@ -220,10 +220,13 @@ dt uart --port COM3 --baud 115200 --out session.log
 6. read/watch 之外的自由检查用 `dt gdb <elf> "命令"`,每参数一条 gdb 命令
 7. **gdb 后串口静默**:旧版固件会被日志忙等死锁卡死(已修复:bsp_log 忙等带 100ms 超时,
    FreeRTOS_Project_Cmake 2026-09 之后版本);仍静默则内核真被暂停,`dt go` 恢复(保 RAM)、`dt run` 清残留
-8. **断点/单步**:克隆探针上 gdb 通道损坏(见 FAQ),原生通道 `dt bp <地址>`(复位重启语义)/
-   `dt step` 也不可靠;可靠方案 = 换官方 SEGGER 探针,或装 OpenOCD 走 `dt ocd-server` 路线
-9. 固件须 Debug 构建(-Og -g),变量为全局/静态,才有可靠符号
-10. Git Bash/WSL 下用 `./dt.sh`(转调 dt.bat);dt.bat/paths.bat 为**纯 ASCII**(英文注释与输出),
+8. **断点/单步**:gdb 通道在克隆探针上损坏(见 FAQ);原生通道单步已可用——`dt step` 连续调用
+   顺序走指令(`exec SetRestartOnClose = 0` 关闭了退出自动恢复,CycleCnt 冻结实测);运行中任意位置
+   下断点仍不可靠(`dt bp`,setbp 在克隆 DLL 上不触发),可靠方案 = 换官方 SEGGER 探针或 ST-Link+OpenOCD
+9. **保持语义**:halt/step/flash --hold/bp 命中后目标保持暂停且跨会话不变;go 恢复运行(不清残留);
+   run 清残留+复位;注意手动另开 JLink.exe 会话若不带 exec SetRestartOnClose,退出时会恢复运行
+10. 固件须 Debug 构建(-Og -g),变量为全局/静态,才有可靠符号
+11. Git Bash/WSL 下用 `./dt.sh`(转调 dt.bat);dt.bat/paths.bat 为**纯 ASCII**(英文注释与输出),
    任何终端/编辑器都不会乱码;成败判断以退出码和标记(`[OK]` / `[ERROR]` / `[FAIL]` / `>>>`)为准
 
 ## 故障排除 FAQ

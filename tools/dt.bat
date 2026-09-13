@@ -112,6 +112,7 @@ set "CMDF=%TEMP%\dt_flash.jlink"
 >> "%CMDF%" echo loadfile "%IMG%"
 >> "%CMDF%" echo r
 if "%HOLD%"=="0" >> "%CMDF%" echo g
+>> "%CMDF%" echo exec SetRestartOnClose = 0
 >> "%CMDF%" echo q
 echo [flash] flashing %IMG% ^(%JLINK_DEVICE%, %JLINK_IF%, %JLINK_SPEED%kHz^) ...
 "%JLINK_DIR%\JLink.exe" -CommandFile "%CMDF%" -AutoConnect 1 -ExitOnError 1 -NoGui 1
@@ -337,6 +338,7 @@ set "CMDF=%TEMP%\dt_halt.jlink"
 >> "%CMDF%" echo %IF_LETTER%
 >> "%CMDF%" echo %JLINK_SPEED%
 >> "%CMDF%" echo h
+>> "%CMDF%" echo exec SetRestartOnClose = 0
 >> "%CMDF%" echo qc
 echo [halt] halting target ^(%JLINK_DEVICE%, %JLINK_SPEED%kHz^)...
 "%JLINK_DIR%\JLink.exe" -if %JLINK_IF% -speed %JLINK_SPEED% -device %JLINK_DEVICE% -CommandFile "%CMDF%" -NoGui 1 > "%TEMP%\dt_halt.log" 2>&1
@@ -459,6 +461,7 @@ set "CMDF=%TEMP%\dt_bp.jlink"
 >> "%CMDF%" echo Sleep %WAIT%
 >> "%CMDF%" echo h
 >> "%CMDF%" echo regs
+>> "%CMDF%" echo exec SetRestartOnClose = 0
 >> "%CMDF%" echo qc
 echo [bp] breakpoint at %ADDR%, waiting up to %WAIT% ms ...
 "%JLINK_DIR%\JLink.exe" -if %JLINK_IF% -speed %JLINK_SPEED% -device %JLINK_DEVICE% -CommandFile "%CMDF%" -NoGui 1 > "%TEMP%\dt_bp.log" 2>&1
@@ -482,6 +485,7 @@ set "CMDF=%TEMP%\dt_step.jlink"
 >> "%CMDF%" echo h
 >> "%CMDF%" echo s
 >> "%CMDF%" echo regs
+>> "%CMDF%" echo exec SetRestartOnClose = 0
 >> "%CMDF%" echo qc
 echo [step] single-stepping one instruction ^(halts the target first if running^)...
 "%JLINK_DIR%\JLink.exe" -if %JLINK_IF% -speed %JLINK_SPEED% -device %JLINK_DEVICE% -CommandFile "%CMDF%" -NoGui 1 > "%TEMP%\dt_step.log" 2>&1
