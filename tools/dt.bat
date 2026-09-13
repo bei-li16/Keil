@@ -6,7 +6,7 @@ REM ==========================================================================
  REM
  REM  用法: dt <子命令> [参数...]      (不带参数显示本帮助)
  REM   check                      J-Link 链路自检
- REM   flash <固件.hex|.bin>      J-Link 烧录并复位运行
+ REM   flash [--hold] <固件.hex|.bin>  烧录;--hold 烧完保持暂停
  REM   server                     起 J-Link GDB Server(常驻,后台运行)
  REM   rtt [输出文件]             抓 RTT 输出(常驻,缺省 rtt.log)
  REM   read <elf> <变量...>       一次性读变量值
@@ -15,11 +15,18 @@ REM ==========================================================================
  REM   ocd-server                 起 OpenOCD GDB Server(常驻,端口 3333)
  REM   ocd-flash <固件> [地址]    OpenOCD 烧录(bin 必须给地址)
  REM   uart [参数...]             串口抓取(常驻,如: dt uart --list)
+ REM   halt                       暂停运行中的目标(常驻暂停, dt run 恢复)
+ REM   probe-reset                探针恢复(克隆 J-Link V8 退化时必跑)
+ REM   run                        清残留断点/观察点后复位放行
+ REM   server-stop                停止 J-Link/OpenOCD GDB Server
  REM ==========================================================================
 
 REM ---- 载入配置(所有子命令共享;帮助信息也顺带显示当前配置状态) ----
 call "%~dp0config\paths.bat"
 if errorlevel 1 exit /b 1
+ REM  交互式 Commander 脚本需要接口字母(S=SWD / J=JTAG)
+set "IF_LETTER=J"
+if /i "%JLINK_IF%"=="SWD" set "IF_LETTER=S"
 
 set "SUB=%~1"
 if "%SUB%"=="" goto USAGE
@@ -36,6 +43,10 @@ if /i "%SUB%"=="gdb"        goto S_GDB
 if /i "%SUB%"=="ocd-server" goto S_OCDSERVER
 if /i "%SUB%"=="ocd-flash"  goto S_OCDFLASH
 if /i "%SUB%"=="uart"       goto S_UART
+if /i "%SUB%"=="halt"       goto S_HALT
+if /i "%SUB%"=="probe-reset" goto S_PROBERESET
+if /i "%SUB%"=="run"        goto S_RUN
+if /i "%SUB%"=="server-stop" goto S_SERVERSTOP
 goto USAGE
 
 REM ==================== check:J-Link 链路自检 ====================
@@ -48,7 +59,9 @@ set "CMDF=%TEMP%\dt_check.jlink"
 >> "%CMDF%" echo speed %JLINK_SPEED%
 >> "%CMDF%" echo connect
 >> "%CMDF%" echo h
->> "%CMDF%" echo regs
+>> "%CMDF%" echo r
+ REM  --hold: 复位后保持暂停便于接着调试;默认复位即运行
+if "%HOLD%"=="0" >> "%CMDF%" echo g
 >> "%CMDF%" echo q
 echo [check] 连接测试: %JLINK_DEVICE% / %JLINK_IF% / %JLINK_SPEED%kHz
 "%JLINK_DIR%\JLink.exe" -CommandFile "%CMDF%" -AutoConnect 1 -ExitOnError 1 -NoGui 1
@@ -62,6 +75,9 @@ exit /b 0
 REM ==================== flash:J-Link 烧录 ====================
 :S_FLASH
 call :NEED_JLINK || exit /b 1
+set "HOLD=0"
+if /i "%~1"=="--hold" set "HOLD=1"
+if /i "%~1"=="--hold" shift
 set "IMG=%~1"
 if "%IMG%"=="" (
     echo [flash][ERROR] 用法: dt flash ^<固件.hex 或 .bin^>
@@ -88,7 +104,7 @@ if errorlevel 1 (
     echo [flash][ERROR] 烧录失败:检查 J-Link USB / 目标板供电 / 接口模式与接线
     exit /b 1
 )
-echo [flash][OK] 已烧录并复位运行
+if "%HOLD%"=="1" (echo [flash][OK] 已烧录, 目标保持暂停; dt run 恢复运行) else echo [flash][OK] 已烧录并复位运行
 exit /b 0
 
 REM ==================== server:J-Link GDB Server ====================
@@ -244,9 +260,9 @@ if not exist "%OPENOCD_DIR%\openocd.exe" (
     echo [ocd][ERROR] %OPENOCD_DIR%\openocd.exe 不存在
     exit /b 1
 )
-echo [ocd-server] interface=%OPENOCD_IF% target=stm32f4x.cfg gdb_port=3333
-echo [ocd-server] gdb 连接: target extended-remote :3333   本进程常驻,Ctrl+C 停止
-"%OPENOCD_DIR%\openocd.exe" -f "interface/%OPENOCD_IF%" -f "target/stm32f4x.cfg" -c "adapter speed 4000"
+echo [ocd-server] interface=%OPENOCD_IF% target=stm32f4x.cfg gdb_port=%OPENOCD_PORT%
+echo [ocd-server] gdb 连接: target extended-remote :%OPENOCD_PORT%   本进程常驻,Ctrl+C 停止
+"%OPENOCD_DIR%\openocd.exe" -f "interface/%OPENOCD_IF%" -f "target/stm32f4x.cfg" -c "adapter speed 4000" -c "gdb_port %OPENOCD_PORT%"
 exit /b 0
 
 REM ==================== ocd-flash:OpenOCD 烧录 ====================
@@ -289,10 +305,84 @@ python "%~dp0uart_capture.py" %UART_ARGS%
 exit /b %errorlevel%
 
 REM ==================== 帮助 ====================
+REM ==================== halt:暂停运行中的目标 ====================
+:S_HALT
+call :NEED_JLINK || exit /b 1
+call :ASSERT_NO_GDBSERVER || exit /b 1
+ REM  JLink.exe 独占探针执行 h 后退出,目标保持暂停;LED 停闪即确认
+set "CMDF=%TEMP%\dt_halt.jlink"
+>  "%CMDF%" echo connect
+>> "%CMDF%" echo %JLINK_DEVICE%
+>> "%CMDF%" echo %IF_LETTER%
+>> "%CMDF%" echo %JLINK_SPEED%
+>> "%CMDF%" echo h
+>> "%CMDF%" echo qc
+echo [halt] 暂停目标 ^(%JLINK_DEVICE%, %JLINK_SPEED%kHz^)...
+"%JLINK_DIR%\JLink.exe" -if %JLINK_IF% -speed %JLINK_SPEED% -device %JLINK_DEVICE% -CommandFile "%CMDF%" -NoGui 1 > "%TEMP%\dt_halt.log" 2>&1
+call :CHECK_JLINK_LOG "%TEMP%\dt_halt.log" halt || exit /b 1
+echo [halt][OK] 目标已暂停;用 dt run 恢复自由运行,或先 dt server 再用 gdb 检查
+exit /b 0
+
+REM ==================== probe-reset:探针恢复(克隆 J-Link V8 必备) ====================
+:S_PROBERESET
+call :NEED_JLINK || exit /b 1
+ REM  克隆 V8 每次会话后退化(变慢/Cannot access memory),独占探针低速重连+复位即恢复
+call :STOP_GDBSERVER_QUIET
+set "CMDF=%TEMP%\dt_probe_reset.jlink"
+>  "%CMDF%" echo connect
+>> "%CMDF%" echo %JLINK_DEVICE%
+>> "%CMDF%" echo %IF_LETTER%
+>> "%CMDF%" echo %PROBE_SPEED%
+>> "%CMDF%" echo h
+>> "%CMDF%" echo r
+>> "%CMDF%" echo g
+>> "%CMDF%" echo qc
+echo [probe-reset] 低速重连并复位 ^(%PROBE_SPEED%kHz^)...
+"%JLINK_DIR%\JLink.exe" -if %JLINK_IF% -speed %PROBE_SPEED% -device %JLINK_DEVICE% -CommandFile "%CMDF%" -NoGui 1 > "%TEMP%\dt_probe_reset.log" 2>&1
+call :CHECK_JLINK_LOG "%TEMP%\dt_probe_reset.log" probe-reset || exit /b 1
+echo [probe-reset][OK] 探针已恢复;server 若被本次操作停止,请重新 dt server
+exit /b 0
+
+REM ==================== run:清残留断点/观察点后放行 ====================
+:S_RUN
+call :NEED_JLINK || exit /b 1
+call :STOP_GDBSERVER_QUIET
+set "CMDF=%TEMP%\dt_run.jlink"
+>  "%CMDF%" echo connect
+>> "%CMDF%" echo %JLINK_DEVICE%
+>> "%CMDF%" echo %IF_LETTER%
+>> "%CMDF%" echo %PROBE_SPEED%
+>> "%CMDF%" echo h
+>> "%CMDF%" echo r
+ REM  FPB/DWT 调试寄存器跨系统复位不清零,残留断点/观察点会让 CPU 一跑到就被冻住
+>> "%CMDF%" echo w4 0xE0002000 0x3
+>> "%CMDF%" echo w4 0xE0001020 0x0
+>> "%CMDF%" echo w4 0xE0001030 0x0
+>> "%CMDF%" echo w4 0xE0001040 0x0
+>> "%CMDF%" echo w4 0xE0001050 0x0
+>> "%CMDF%" echo g
+>> "%CMDF%" echo qc
+echo [run] 清残留断点/观察点并复位放行...
+"%JLINK_DIR%\JLink.exe" -if %JLINK_IF% -speed %PROBE_SPEED% -device %JLINK_DEVICE% -CommandFile "%CMDF%" -NoGui 1 > "%TEMP%\dt_run.log" 2>&1
+call :CHECK_JLINK_LOG "%TEMP%\dt_run.log" run || exit /b 1
+echo [run][OK] 目标已自由运行(断点/观察点残留已清除)
+exit /b 0
+
+REM ==================== server-stop:停止 GDB Server ====================
+:S_SERVERSTOP
+call :STOP_GDBSERVER_QUIET
+tasklist 2>nul | findstr /I "JLinkGDBServerCL.exe openocd.exe" >nul && (
+    echo [server-stop][FAIL] 仍有调试服务器进程存活,请手动检查 tasklist
+    exit /b 1
+)
+echo [server-stop][OK] J-Link/OpenOCD GDB Server 已停止,端口已释放
+exit /b 0
+
+
 :USAGE
 echo 用法: dt ^<子命令^> [参数...]
 echo   check                      J-Link 链路自检
-echo   flash ^<固件.hex^|.bin^>      J-Link 烧录并复位运行
+echo   flash [--hold] ^<固件.hex^|.bin^>  烧录;--hold 烧完保持暂停
 echo   server                     起 J-Link GDB Server ^(常驻,端口 %GDB_PORT%^)
 echo   rtt [输出文件]             抓 RTT 输出 ^(常驻,缺省 rtt.log^)
 echo   read ^<elf^> ^<变量...^>       一次性读变量值
@@ -301,6 +391,10 @@ echo   gdb ^<elf^> ^<命令...^>        任意 gdb 命令 ^(自动初始化与断开^)
 echo   ocd-server                 起 OpenOCD GDB Server ^(常驻,端口 3333^)
 echo   ocd-flash ^<固件^> [地址]    OpenOCD 烧录 ^(bin 必须给地址^)
 echo   uart [参数...]             串口抓取 ^(如: dt uart --list^)
+echo   halt                       暂停运行中的目标 ^(常驻, dt run 恢复^)
+echo   probe-reset                探针恢复 ^(克隆 J-Link V8 退化时必跑^)
+echo   run                        清残留断点/观察点后复位放行
+echo   server-stop                停止 J-Link/OpenOCD GDB Server 并释放端口
 echo.
 echo 示例: dt flash build\app.hex
 echo       dt watch build\app.elf g_counter g_fsm_state
@@ -332,3 +426,27 @@ if not exist "%TOOLCHAIN_DIR%\arm-none-eabi-gdb.exe" (
 )
 set "GDB=%TOOLCHAIN_DIR%\arm-none-eabi-gdb.exe"
 exit /b 0
+
+
+REM ==================== 子程序:探针/服务器辅助 ====================
+:ASSERT_NO_GDBSERVER
+tasklist 2>nul | findstr /I "JLinkGDBServerCL.exe" >nul && (
+    echo [dt][ERROR] GDB Server 正在占用探针,先执行: dt server-stop
+    exit /b 1
+)
+exit /b 0
+
+:STOP_GDBSERVER_QUIET
+taskkill /IM JLinkGDBServerCL.exe /F >nul 2>&1
+taskkill /IM openocd.exe /F >nul 2>&1
+ REM  等 1 秒让探针句柄释放
+ping -n 2 127.0.0.1 >nul
+exit /b 0
+
+:CHECK_JLINK_LOG
+ REM  %1=日志文件 %2=子命令名;JLink.exe 交互退出码不可靠,以输出 O.K/identified 判定
+findstr /C:"O.K" "%~1" >nul && exit /b 0
+findstr /C:"identified" "%~1" >nul && exit /b 0
+echo [%~2][FAIL] 未检测到连接成功标记(O.K/identified),完整日志:
+type "%~1"
+exit /b 1
