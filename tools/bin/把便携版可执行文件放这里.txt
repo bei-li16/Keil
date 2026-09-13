@@ -1,0 +1,8 @@
+把便携版可执行文件放本目录(可选):
+
+  JLink.exe / JLinkGDBServerCL.exe / JLinkRTTLogger.exe   <- 来自 SEGGER 官方包
+  arm-none-eabi-gdb.exe                                   <- 来自 ARM GNU 工具链或 CubeIDE
+  openocd.exe                                             <- 来自 xpack-openocd
+
+放入后所有脚本会优先使用本目录的版本,无需安装到系统。
+(缺什么可执行文件时,也可只装系统版,脚本会自动探测常见安装位置)
