@@ -4,3 +4,4 @@
 *.cyclo
 **/Debug/
 **/build/
+openclaw.json
