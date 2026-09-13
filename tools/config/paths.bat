@@ -11,7 +11,7 @@ REM empty = fall through to the "bin directory probe" and "system auto detection
 REM or hardcode it, e.g.: set "JLINK_DIR=D:\Software\SEGGER\JLink"
 set "JLINK_DIR="       REM directory holding JLink.exe / JLinkGDBServerCL.exe / JLinkRTTLogger.exe
 set "TOOLCHAIN_DIR="   REM directory holding arm-none-eabi-gdb.exe (CubeIDE bundled or standalone ARM toolchain)
-set "OPENOCD_DIR="     REM directory holding openocd.exe (optional, leave empty if unused)
+set "OPENOCD_DIR=%~dp0..\xpack-openocd\bin"   REM xpack-openocd (full driver set incl. jlink)
 
 REM ------------------- part 2: tools\bin portable directory (second priority) -------------------
 REM drop portable executables into tools\bin\ and every script can use them, no install needed
@@ -44,7 +44,7 @@ set "PROBE_SPEED=1000"          REM low speed for probe-reset/run (verified stab
 REM  ports must avoid winnat reserved ranges (netsh interface ipv4 show excludedportrange protocol=tcp);
 REM  on this machine 2311-2410 is reserved and binding 2333 fails (verified), hence 3333
 set "GDB_PORT=3333"             REM J-Link GDB Server TCP port
-set "OPENOCD_IF=stlink.cfg"     REM OpenOCD debugger config: stlink.cfg / cmsis-dap.cfg etc.
+set "OPENOCD_IF=jlink.cfg"      REM OpenOCD debugger config (this probe is a J-Link clone)
 set "OPENOCD_PORT=3334"         REM OpenOCD GDB Server port (kept apart from J-Link's 3333)
 set "UART_PORT=COM3"            REM debug serial port (default; uart_capture.py can override with --port)
 set "UART_BAUD=115200"          REM serial baud rate, must match the target firmware config
