@@ -1,7 +1,7 @@
 # tools — STM32 控制台/AI 调试工具集
 
 纯脚本工具集,不绑定任何工程:固件文件、elf、变量名全部作参数传入。
-**单一入口 `dt.bat`**,9 个子命令覆盖 J-Link 烧录/自检/GDB Server/RTT、gdb 变量观察、
+**单一入口 `dt.bat`**,10 个子命令覆盖 J-Link 烧录/自检/GDB Server/RTT、gdb 变量观察与任意命令、
 OpenOCD 替代方案、串口抓取。依赖的可执行文件不用装在本目录(三级查找,见下)。
 
 ## 文件树(仅 5 个文件)
@@ -26,6 +26,7 @@ tools/
 | `rtt` | `dt rtt [输出文件]` | 抓 RTT 输出(缺省 rtt.log) | 常驻 |
 | `read` | `dt read <elf> <变量...>` | 一次性读变量值 | 一次性 |
 | `watch` | `dt watch <elf> <变量...>` | 硬件观察点盯变量(新值+调用栈) | 常驻 |
+| `gdb` | `dt gdb <elf> <gdb命令...>` | 任意 gdb 命令(每参数一条,自动初始化/断开) | 一次性 |
 | `ocd-server` | `dt ocd-server` | OpenOCD GDB Server(端口 3333) | 常驻 |
 | `ocd-flash` | `dt ocd-flash <固件> [地址]` | OpenOCD 烧录(bin 必须给地址) | 一次性 |
 | `uart` | `dt uart [--port COM7] ...` | 串口抓取(uart_capture.py 参数透传) | 常驻 |
@@ -55,6 +56,46 @@ dt uart --list                         # 串口抓取(需 pip install pyserial)
   输出 `>>> [watch] 变量 = 新值` + 3 层调用栈——"counter 被谁改的"的直接答案
 - **RTT**(`rtt`):不停机、不占串口,适合中断打点;要求固件实现 SEGGER RTT 兼容控制块
 - **串口**(`uart`):无需调试器的日志通道
+
+## 端到端调试剧本
+
+### 剧本 1:烧一个新固件并确认跑起来
+```
+dt check
+dt flash <你的工程>\build\app.hex
+dt read <你的工程>\build\app.elf <任意全局变量>    # 读到合理值 = 程序在跑
+```
+
+### 剧本 2:"counter 变量的变化时机"
+```
+dt server &                                        # 后台
+dt watch <elf> g_counter > watch.log 2>&1 &        # 后台盯 30~60 秒
+```
+读 watch 输出:每条 `>>> [watch] g_counter = 新值` 后跟 3 层调用栈——**每次修改的
+发生位置**。counter 由多处递增时(SysTick/主循环/中断回调),各条路径的先后和
+频率一目了然。
+
+### 剧本 3:"状态机的切换"
+```
+dt watch <elf> g_fsm_state &                       # 后台
+(操作设备或等待自动流转)
+```
+每次切换打出新状态值 + 切换处的调用栈;要知道切换的**精确时间间隔**,在状态机
+函数里加 RTT/事件打点,用剧本 4 的时间线看。
+
+### 剧本 4:"UART 中断触发情况 / DMA 完成中断"
+```
+在固件回调里加打点(HAL_UARTEx_RxEventCallback / HAL_UART_TxCpltCallback 等):
+  a) 固件实现 RTT   → dt rtt &   (后台)→ 读 rtt.log
+  b) 事件写 RAM 数组 → dt gdb <elf> "x/256xw &事件数组"   # 停机倒出
+判读:TX_START→TX_DONE 成对出现 = TX DMA 完成中断正常;RX_IDLE 出现次数 = 收到
+帧数;两条事件的时间戳差 = 中断间隔。
+```
+
+### 剧本 5:纯串口日志采集(没有/不想用调试器)
+```
+dt uart --port COM5 --baud 115200 --out session.log
+```
 
 ## 配置:config/paths.bat(唯一需要按机器修改的文件)
 
@@ -138,10 +179,11 @@ dt uart --list                         # 串口抓取(需 pip install pyserial)
 ## AI 接入约定
 
 1. **常驻子命令**(server / rtt / watch / uart)以后台任务启动,输出落文件再读;
-   **一次性子命令**(check / flash / read / ocd-flash)直接调用,看退出码 + stdout
+   **一次性子命令**(check / flash / read / gdb / ocd-flash)直接调用,看退出码 + stdout
 2. 任何 gdb 操作前先确认 `dt server` 已运行;任何烧录前先 `dt check`
 3. watch 输出格式:`>>> [watch] 变量 = 值` + 3 层调用栈(修改点的代码路径)
-4. 固件须 Debug 构建(-Og -g),变量为全局/静态,才有可靠符号
+4. read/watch 之外的自由检查用 `dt gdb <elf> "命令"`,每参数一条 gdb 命令
+5. 固件须 Debug 构建(-Og -g),变量为全局/静态,才有可靠符号
 
 ## 故障排除 FAQ
 

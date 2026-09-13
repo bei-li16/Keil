@@ -11,6 +11,7 @@ REM ==========================================================================
  REM   rtt [输出文件]             抓 RTT 输出(常驻,缺省 rtt.log)
  REM   read <elf> <变量...>       一次性读变量值
  REM   watch <elf> <变量...>      硬件观察点盯变量(常驻,含调用栈)
+ REM   gdb <elf> <命令...>        任意 gdb 命令(每参数一条,自动初始化/断开)
  REM   ocd-server                 起 OpenOCD GDB Server(常驻,端口 3333)
  REM   ocd-flash <固件> [地址]    OpenOCD 烧录(bin 必须给地址)
  REM   uart [参数...]             串口抓取(常驻,如: dt uart --list)
@@ -31,6 +32,7 @@ if /i "%SUB%"=="server"     goto S_SERVER
 if /i "%SUB%"=="rtt"        goto S_RTT
 if /i "%SUB%"=="read"       goto S_READ
 if /i "%SUB%"=="watch"      goto S_WATCH
+if /i "%SUB%"=="gdb"        goto S_GDB
 if /i "%SUB%"=="ocd-server" goto S_OCDSERVER
 if /i "%SUB%"=="ocd-flash"  goto S_OCDFLASH
 if /i "%SUB%"=="uart"       goto S_UART
@@ -194,6 +196,44 @@ goto WT_LOOP
 "%GDB%" "%ELF%" -batch -x "%CMDF%"
 exit /b 0
 
+REM ==================== gdb:任意 gdb 命令 ====================
+:S_GDB
+call :NEED_GDB || exit /b 1
+set "ELF=%~1"
+if "%ELF%"=="" (
+    echo [gdb][ERROR] 用法: dt gdb ^<工程.elf^> ^<gdb命令...^>
+    echo [gdb]        每个参数是一条 gdb 命令,自动初始化连接并在结束断开放行目标
+    echo [gdb]        例: dt gdb app.elf "info registers" "x/16xw 0x08000000"
+    exit /b 1
+)
+if not exist "%ELF%" (
+    echo [gdb][ERROR] elf 不存在: %ELF%
+    exit /b 1
+)
+if "%~2"=="" (
+    echo [gdb][ERROR] 至少给一条 gdb 命令
+    exit /b 1
+)
+set "CMDF=%TEMP%\dt_gdb.gdb"
+>  "%CMDF%" echo set confirm off
+>> "%CMDF%" echo set pagination off
+>> "%CMDF%" echo target extended-remote :%GDB_PORT%
+:GB_LOOP
+if "%~2"=="" goto GB_DONE
+ REM  原样写入用户命令;注意 gdb 命令里避免 cmd 重定向字符 ^< ^> ^|
+>> "%CMDF%" echo %~2
+shift
+goto GB_LOOP
+:GB_DONE
+ REM  断开放行目标,与 read/watch 保持一致的"用完即还"语义
+>> "%CMDF%" echo detach
+"%GDB%" "%ELF%" -batch -x "%CMDF%"
+if errorlevel 1 (
+    echo [gdb][ERROR] 执行失败:确认 server 已后台运行、命令与符号正确
+    exit /b 1
+)
+exit /b 0
+
 REM ==================== ocd-server:OpenOCD GDB Server ====================
 :S_OCDSERVER
 if not defined OPENOCD_DIR (
@@ -257,6 +297,7 @@ echo   server                     起 J-Link GDB Server ^(常驻,端口 %GDB_PORT%^)
 echo   rtt [输出文件]             抓 RTT 输出 ^(常驻,缺省 rtt.log^)
 echo   read ^<elf^> ^<变量...^>       一次性读变量值
 echo   watch ^<elf^> ^<变量...^>      硬件观察点盯变量 ^(常驻,含调用栈^)
+echo   gdb ^<elf^> ^<命令...^>        任意 gdb 命令 ^(自动初始化与断开^)
 echo   ocd-server                 起 OpenOCD GDB Server ^(常驻,端口 3333^)
 echo   ocd-flash ^<固件^> [地址]    OpenOCD 烧录 ^(bin 必须给地址^)
 echo   uart [参数...]             串口抓取 ^(如: dt uart --list^)
@@ -264,6 +305,7 @@ echo.
 echo 示例: dt flash build\app.hex
 echo       dt watch build\app.elf g_counter g_fsm_state
 echo       dt read  build\app.elf g_counter
+echo       dt gdb   build\app.elf "info registers" "x/16xw 0x08000000"
 echo 配置文件: %~dp0config\paths.bat
 exit /b 1
 
