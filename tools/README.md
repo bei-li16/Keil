@@ -74,7 +74,10 @@ dt server-stop                         # 收尾:停掉 GDB Server
 4. **看日志前确认芯片在跑**(LED 在闪)——芯片被 halt 冻住时串口静默(0 字节),不是接线问题
 5. **探针独占**:server 与 JLink.exe Commander 不能同时连;`dt probe-reset` / `dt run` /
    `dt halt` 涉及独占访问,会自动先停掉 server(用完重新 `dt server` 即可)
-6. `dt watch` 用完必须 `dt run`——DWT 观察点寄存器跨系统复位不清零,残留会让 CPU 一跑到就被冻住
+6. `dt watch` / gdb 断点用完必须 `dt run`——FPB 硬件断点(FP_COMPn)与 DWT 观察点
+   寄存器**跨系统复位不清零**,残留会让 CPU 一跑到断点地址就被冻住(实测:一次 gdb
+   断点移除失败后,固件每次启动都冻死在断点地址);`dt run` 同时清 FP_COMPn、
+   DWT COMPn 与 FUNCTIONn
 
 ## 端到端调试剧本
 
@@ -230,6 +233,7 @@ dt uart --port COM3 --baud 115200 --out session.log
 | 串口打不开 / 乱码 | `dt uart --list` 查口;波特率与固件一致 |
 | OpenOCD 找不到设备 | `OPENOCD_IF` 与调试器不符(stlink/cmsis-dap/jlink) |
 | .bat 打开乱码 | 不应出现(文件为纯 ASCII);若被改动过,移除非 ASCII 字符并恢复 CRLF 行尾 |
+| gdb 断点/单步命中后 PC 读回乱码 | 克隆 J-Link V8 的 gdb 远程通道缺陷(确定性复现):断点命中后寄存器读回损坏。断点/单步改走 JLink 原生命令(`setbp`/`s`,实测 PC 精确停在断点、单步步进正常),或换官方探针;`dt read`/`dt watch`/内存读写不受影响 |
 
 ## 原理速查
 

@@ -362,13 +362,25 @@ set "CMDF=%TEMP%\dt_run.jlink"
 >> "%CMDF%" echo %PROBE_SPEED%
 >> "%CMDF%" echo h
 >> "%CMDF%" echo r
- REM  FPB/DWT debug registers survive a system reset; leftover breakpoints/
- REM  watchpoints freeze the CPU the moment it runs into them
+ REM  FPB breakpoints and DWT watchpoints survive a system reset; leftovers
+ REM  freeze the CPU the moment it runs into them. Clear FP_COMPn (0xE0002008+,
+ REM  used by gdb breakpoints) AND DWT COMPn/FUNCTIONn (watchpoints) - verified
+ REM  in the field: a stale FP_COMP kept freezing the app at the breakpoint addr
 >> "%CMDF%" echo w4 0xE0002000 0x3
+>> "%CMDF%" echo w4 0xE0002008 0x0
+>> "%CMDF%" echo w4 0xE000200C 0x0
+>> "%CMDF%" echo w4 0xE0002010 0x0
+>> "%CMDF%" echo w4 0xE0002014 0x0
+>> "%CMDF%" echo w4 0xE0002018 0x0
+>> "%CMDF%" echo w4 0xE000201C 0x0
 >> "%CMDF%" echo w4 0xE0001020 0x0
 >> "%CMDF%" echo w4 0xE0001030 0x0
 >> "%CMDF%" echo w4 0xE0001040 0x0
 >> "%CMDF%" echo w4 0xE0001050 0x0
+>> "%CMDF%" echo w4 0xE0001028 0x0
+>> "%CMDF%" echo w4 0xE0001038 0x0
+>> "%CMDF%" echo w4 0xE0001048 0x0
+>> "%CMDF%" echo w4 0xE0001058 0x0
 >> "%CMDF%" echo g
 >> "%CMDF%" echo qc
 echo [run] clearing leftover breakpoints/watchpoints, reset and go...
