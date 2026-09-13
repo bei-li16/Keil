@@ -9,7 +9,7 @@ Git Bash / WSL 用户走 `dt.sh` 薄转发壳,行为与 dt.bat 完全一致。
 
 ```
 tools/
-├── dt.bat                 ★ 唯一入口:14 个子命令分发
+├── dt.bat                 ★ 唯一入口:14 个子命令分发,纯 ASCII+CRLF(英文注释/输出,任何终端不乱码)
 ├── dt.sh                  Git Bash/WSL 薄转发壳(转调 dt.bat)
 ├── uart_capture.py        串口抓取(dt uart 的实现本体)
 ├── config/
@@ -22,7 +22,7 @@ tools/
 
 | 子命令 | 用法 | 功能 | 形态 |
 |---|---|---|---|
-| `check` | `dt check` | J-Link 链路自检(连接+打印寄存器) | 一次性 |
+| `check` | `dt check` | J-Link 链路自检(连接+打印寄存器),结束后目标继续运行 | 一次性 |
 | `flash` | `dt flash [--hold] <固件.hex\|.bin>` | 烧录并复位运行;`--hold` 烧完保持暂停便于接着调试 | 一次性 |
 | `server` | `dt server` | J-Link GDB Server(端口 %GDB_PORT%) | 常驻 |
 | `server-stop` | `dt server-stop` | 停止 J-Link/OpenOCD GDB Server 并释放端口 | 一次性 |
@@ -183,7 +183,7 @@ dt uart --port COM3 --baud 115200 --out session.log
 
 | # | 依赖 | 说明 |
 |---|---|---|
-| 1 | Windows + cmd.exe | .bat 为 GBK+CRLF,依赖中文代码页解析 |
+| 1 | Windows + cmd.exe | .bat 为纯 ASCII+CRLF,无编码依赖 |
 | 2 | %TEMP% 可写 | 动态生成的 *.jlink / *.gdb 临时命令文件 |
 | 3 | TCP 端口 3333(J-Link)/ %OPENOCD_PORT%(OpenOCD) | 仅本机回环 |
 | 4 | USB 驱动(J-Link 包自带 / ST-Link 驱动)、COM 驱动(CH340/CP2102) | 对应硬件 |
@@ -211,8 +211,8 @@ dt uart --port COM3 --baud 115200 --out session.log
 5. watch 输出格式:`>>> [watch] 变量 = 值` + 3 层调用栈(修改点的代码路径)
 6. read/watch 之外的自由检查用 `dt gdb <elf> "命令"`,每参数一条 gdb 命令
 7. 固件须 Debug 构建(-Og -g),变量为全局/静态,才有可靠符号
-8. Git Bash/WSL 下用 `./dt.sh`(转调 dt.bat);bat 输出为 GBK 中文,**成败判断以退出码和
-   ASCII 标记(`[OK]` / `[ERROR]` / `[FAIL]` / `>>>`)为准**,中文细节重定向到文件后按 GBK 读取
+8. Git Bash/WSL 下用 `./dt.sh`(转调 dt.bat);dt.bat/paths.bat 为**纯 ASCII**(英文注释与输出),
+   任何终端/编辑器都不会乱码;成败判断以退出码和标记(`[OK]` / `[ERROR]` / `[FAIL]` / `>>>`)为准
 
 ## 故障排除 FAQ
 
@@ -229,7 +229,7 @@ dt uart --port COM3 --baud 115200 --out session.log
 | RTTLogger 找不到控制块 | 固件未实现 RTT |
 | 串口打不开 / 乱码 | `dt uart --list` 查口;波特率与固件一致 |
 | OpenOCD 找不到设备 | `OPENOCD_IF` 与调试器不符(stlink/cmsis-dap/jlink) |
-| .bat 打开乱码 | GBK 编码,编辑器选 GB2312/GBK 打开,勿存成 UTF-8 |
+| .bat 打开乱码 | 不应出现(文件为纯 ASCII);若被改动过,移除非 ASCII 字符并恢复 CRLF 行尾 |
 
 ## 原理速查
 
@@ -243,5 +243,6 @@ dt uart --port COM3 --baud 115200 --out session.log
 - 换芯片:改 `JLINK_DEVICE`;OpenOCD 路线同时改 dt.bat 两处 `target/stm32f4x.cfg`
 - 换调试器:J-Link 不动;OpenOCD 改 `OPENOCD_IF`
 - 加子命令:在 dt.bat 加一个 `if /i "%SUB%"=="xxx" goto S_XXX` 分支 + 实现块,配置一律来自 paths.bat
-- .bat 为 GBK+CRLF(cmd 下 UTF-8+chcp 65001 会导致批处理解析错位,实测勿改),编辑时选对编码
+- .bat 为纯 ASCII+CRLF:勿加入中文/非 ASCII 字符(部分控制台代码页下会乱码;
+  UTF-8+chcp 65001 实测会让批处理解析错位);CRLF 行尾必须保留
 - dt.sh 只做转发,新子命令无需同步修改;`.gitattributes` 约定 .bat=CRLF、.sh/.py=LF
