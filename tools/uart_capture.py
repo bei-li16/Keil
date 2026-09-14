@@ -50,6 +50,7 @@ def run_counted(ser, args):
     total = 0
     hits = [0] * len(pats)
     others = []                      # 不匹配任何模式的行样本(最多 5 条)
+    samples = [[] for _ in pats]     # 每个模式最多留 3 条匹配行样本(看实际数值)
     buf = ""                         # 行缓冲,半行留到下一轮
     while time.time() < deadline:
         data = ser.read(256)         # 0.2s 内到达的数据(空转返回 b"")
@@ -65,6 +66,8 @@ def run_counted(ser, args):
             for i, p in enumerate(pats):
                 if p.search(line):
                     hits[i] += 1
+                    if len(samples[i]) < 3:
+                        samples[i].append(line)
                     break
             else:
                 if len(others) < 5:
@@ -79,6 +82,9 @@ def run_counted(ser, args):
     print(f"[uart] window={args.duration:g}s bytes={total}")
     for p, n in zip(args.count, hits):
         print(f"[uart] count[{p}] = {n}")
+    for p, ss in zip(args.count, samples):
+        for s in ss:
+            print(f"[uart] sample[{p}]: {s}")
     if others:
         print("[uart] --- other lines (up to 5) ---")
         for line in others:

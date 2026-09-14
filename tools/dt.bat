@@ -112,7 +112,6 @@ set "CMDF=%TEMP%\dt_flash.jlink"
 >> "%CMDF%" echo loadfile "%IMG%"
 >> "%CMDF%" echo r
 if "%HOLD%"=="0" >> "%CMDF%" echo g
->> "%CMDF%" echo exec SetRestartOnClose = 0
 >> "%CMDF%" echo q
 echo [flash] flashing %IMG% ^(%JLINK_DEVICE%, %JLINK_IF%, %JLINK_SPEED%kHz^) ...
 "%JLINK_DIR%\JLink.exe" -CommandFile "%CMDF%" -AutoConnect 1 -ExitOnError 1 -NoGui 1
