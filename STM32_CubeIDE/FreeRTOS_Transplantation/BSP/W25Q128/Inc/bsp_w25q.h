@@ -44,7 +44,7 @@
 
 #define W25Q_SPI5                        &hspi5
 #define SPI_FLASH_CS_LOW()               HAL_GPIO_WritePin(W25Q_SPI5_CS_GPIO_Port, W25Q_SPI5_CS_Pin, GPIO_PIN_RESET)
-#define SPI_FLASH_CS_HIGH()              HAL_GPIO_WritePin(W25Q_SPI5_CS_GPIO_Port, W25Q_SPI5_CS_Pin, GPIO_PIN_RESET)
+#define SPI_FLASH_CS_HIGH()              HAL_GPIO_WritePin(W25Q_SPI5_CS_GPIO_Port, W25Q_SPI5_CS_Pin, GPIO_PIN_SET)
 
 #define SPI_TRANSMIT_IM                  STD_ON
 #define SPI_TRANSMIT_DMA                 STD_OFF

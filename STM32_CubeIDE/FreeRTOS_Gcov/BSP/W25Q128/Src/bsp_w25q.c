@@ -9,31 +9,6 @@
 static uint16_t SPI_TIMEOUT_UserCallback(uint8_t errorCode);
 
 
-
-uint32_t SPI_WriteData(uint8_t Data)
-{
-    uint8_t *pData = &Data;
-    uint32_t ret = 0;
-#if (SPI_TRANSMIT_IM == STD_ON)
-    ret = HAL_SPI_Transmit(W25Q_SPI5, pData, 1, W25Q_SPI5_TRANSMIT_TIMEOUT);
-#elif (SPI_TRANSMIT_DMA == STD_ON)
-    while (LCD_TX_STATUS == STD_OFF);
-    LCD_TX_STATUS = STD_OFF;
-    HAL_SPI_Transmit_DMA(W25Q_SPI5, pData, 1);
-#endif
-    return ret;
-}
-
-uint32_t SPI_ReaData(uint8_t Data)
-{
-#if (SPI_TRANSMIT_IM == STD_ON)
-    uint32_t ret = 0;
-    ret = HAL_SPI_Receive(W25Q_SPI5, &Data, 1, W25Q_SPI5_RECIEVE_TIMEOUT);
-#endif
-    return ret;
-}
-
-
 void SPI_FLASH_Init(void)
 {
     /* NULL */
@@ -366,15 +341,16 @@ uint8_t SPI_FLASH_ReadByte(void)
 * @param  byte：要发送的数据
 * @retval 返回接收到的数据
 */
+/* 全双工一次收发:发送 byte 的同时从总线收回应答字节(W25Q 的读出由主机时钟驱动,
+ * 接收必须伴随发送)。CS 由各事务函数在命令边界统一控制,本函数不做逐字节片选,
+ * 否则多字节命令会被拆散 */
 uint8_t SPI_FLASH_SendByte(uint8_t byte)
 {
-    uint8_t retdata = 0;
-    uint8_t ret = 0;
-    SPI_FLASH_CS_LOW();
-    ret = SPI_WriteData(byte);
-    ret = SPI_ReaData(&retdata);
-    SPI_FLASH_CS_HIGH();
-    return retdata;
+    uint8_t rx = 0;
+#if (SPI_TRANSMIT_IM == STD_ON)
+    (void)HAL_SPI_TransmitReceive(W25Q_SPI5, &byte, &rx, 1, W25Q_SPI5_TRANSMIT_TIMEOUT);
+#endif
+    return rx;
 }
 
 /*******************************************************************************
