@@ -8,6 +8,9 @@
 #include "task.h"
 #include "cmsis_os.h"
 #include "user_task.h"
+#ifdef GCOV_BUILD
+#include "bsp_gcov.h"
+#endif
 
 
 void Task50ms(void *argument) 
@@ -52,8 +55,12 @@ void Task1000ms(void *argument)
     TickType_t xLastWakeTime = xTaskGetTickCount();
 #endif
     const TickType_t xPeriod = pdMS_TO_TICKS(TASK1000MS_DELAY);
-    for(;;) 
+    for(;;)
     {
+#ifdef GCOV_BUILD
+        /* gcov 导出保活链:RAM 模式周期刷新缓冲,RTT/SEMIHOST 受 gcov_stream_enable 门控 */
+        bsp_gcov_periodic();
+#endif
 #if defined(USE_BANK_A)
         LOG_RELEASE("Task1000ms in BankA 2\n");
 #elif defined(USE_BANK_B)

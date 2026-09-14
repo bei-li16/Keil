@@ -43,10 +43,12 @@ ifeq ($(OS),Windows_NT)
     MAKE_DIR ?= C:/ST/STM32CubeIDE_1.18.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.make.win32_2.2.0.202409170845/tools/bin
 #     COMPILER_DIR ?= D:\Software\arm-gnu-toolchain-14.3.rel1-mingw-w64-x86_64-arm-none-eabi\bin
     COMPILER_DIR ?= C:/ST/STM32CubeIDE_1.18.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin
-    RM = del /Q /F
-    RM_FILE = del /Q /F
-    RMDIR = rmdir /S /Q
-    MKDIR = mkdir
+    # CubeIDE 的 make.exe 自带 sh.exe 并优先用它执行配方,cmd 内建命令(del/rmdir/if)不可用,
+    # 因此 Windows 下文件操作命令也必须用 sh 语法
+    RM = rm -f
+    RM_FILE = rm -f
+    RMDIR = rm -rf
+    MKDIR = mkdir -p
     PATH_SEP = \\
 else
     MAKE_DIR ?= /opt/st/stm32cubeide_1.18.1/plugins/com.st.stm32cube.ide.mcu.externaltools.make.linux_2.2.0.202409170845/tools/bin
@@ -123,6 +125,19 @@ GCOV_DIR = gcov_output
 # 需要进行覆盖率测试的文件列表
 GCOV_FILES ?= bsp_led.c
 
+# 覆盖率数据导出传输方式(见 BSP/GCOV 与 GCOV_EXPORT_README.md):
+#   ram      数据写入静态缓冲,GDB dump binary memory 取回(默认,最稳)
+#   rtt      经 SEGGER RTT 通道 0 实时流出,JLinkRTTLogger 落盘
+#   semihost 经 semihosting 文件调用直接写主机文件(需 OpenOCD/J-Link 开 semihosting)
+GCOV_TRANSPORT ?= ram
+ifeq ($(GCOV_TRANSPORT),rtt)
+GCOV_TRANSPORT_DEFINE := -DGCOV_TRANSPORT_RTT
+else ifeq ($(GCOV_TRANSPORT),semihost)
+GCOV_TRANSPORT_DEFINE := -DGCOV_TRANSPORT_SEMIHOST
+else
+GCOV_TRANSPORT_DEFINE := -DGCOV_TRANSPORT_RAM
+endif
+
 # 获取特定文件的编译选项
 # 参数: $(1) 源文件路径
 define GET_FILE_CFLAGS
@@ -161,7 +176,8 @@ INCLUDES = -I"$(PROJECT_ROOT)Core/Inc" \
            -I"$(PROJECT_ROOT)BSP/LED/Inc" \
            -I"$(PROJECT_ROOT)BSP/LOG/Inc" \
            -I"$(PROJECT_ROOT)BSP/USER_TASK/Inc" \
-           -I"$(PROJECT_ROOT)BSP/W25Q128/Inc"
+           -I"$(PROJECT_ROOT)BSP/W25Q128/Inc" \
+           -I"$(PROJECT_ROOT)BSP/GCOV/Inc"
 
 
 # ==============================================================================
@@ -221,30 +237,24 @@ $(foreach src,$(ASM_SOURCES),$(eval $(call COMPILE_ASM_TEMPLATE,$(src))))
 all: $(BUILD_DIR)/$(PROJECT).elf $(BUILD_DIR)/$(PROJECT).hex $(BUILD_DIR)/$(PROJECT).bin $(BUILD_DIR)/$(PROJECT).map $(BUILD_DIR)/$(PROJECT).dis
 
 # 运行目标 - 下载hex文件到STM32
+# download.bat 是 Windows 批处理,sh 环境下需经 cmd 执行
 run: $(BUILD_DIR)/$(PROJECT).hex
 	@echo Downloading $(PROJECT).hex to STM32...
-ifeq ($(OS),Windows_NT)
-	@call download.bat $(BUILD_DIR)/$(PROJECT).hex
-else
-	@echo "Error: download script only supported on Windows"
-	@exit 1
-endif
+	@cmd //c download.bat $(BUILD_DIR)/$(PROJECT).hex
 
-# 创建构建目录（跨平台兼容）
+# 创建构建目录
 $(BUILD_DIR):
 	@echo Creating build directory...
-ifeq ($(OS),Windows_NT)
-	@if not exist $(BUILD_DIR) $(MKDIR) $(BUILD_DIR)
-else
-	@$(MKDIR) -p $(BUILD_DIR)
-endif
+	@$(MKDIR) $(BUILD_DIR)
 
 
 
 # 链接生成elf文件
+# 目标文件必须位于库文件(-lc/-lm/-lgcov)之前:链接器单遍扫描,先看到对象文件的
+# 未解析符号,才能从后面的库拉取对应成员;否则 -lgcov 在扫描时无引用,libgcov 不会被拉入
 $(BUILD_DIR)/$(PROJECT).elf: $(OBJS) | $(BUILD_DIR)
 	@echo Linking: $@
-	$(CC) $(LDFLAGS) $(OBJS) -o $@
+	$(CC) $(OBJS) $(LDFLAGS) -o $@
 
 # 生成map文件
 $(BUILD_DIR)/$(PROJECT).map: $(BUILD_DIR)/$(PROJECT).elf | $(BUILD_DIR)
@@ -272,28 +282,16 @@ info: $(BUILD_DIR)/$(PROJECT).elf
 # 清理构建文件
 clean:
 	@echo Cleaning build directory...
-ifeq ($(OS),Windows_NT)
-	@if exist $(BUILD_DIR) rmdir /S /Q "$(BUILD_DIR)"
-else
 	@$(RMDIR) $(BUILD_DIR) 2>/dev/null || true
-endif
 
 # 完全清理 - 删除build目录和项目根目录的输出文件
 distclean: clean
 	@echo Cleaning project files...
-ifeq ($(OS),Windows_NT)
-	@if exist "..\$(PROJECT).elf" del /Q /F "..\$(PROJECT).elf"
-	@if exist "..\$(PROJECT).hex" del /Q /F "..\$(PROJECT).hex"
-	@if exist "..\$(PROJECT).bin" del /Q /F "..\$(PROJECT).bin"
-	@if exist "..\$(PROJECT).map" del /Q /F "..\$(PROJECT).map"
-	@if exist "..\$(PROJECT).dis" del /Q /F "..\$(PROJECT).dis"
-else
 	@$(RM_FILE) ../$(PROJECT).elf
 	@$(RM_FILE) ../$(PROJECT).hex
 	@$(RM_FILE) ../$(PROJECT).bin
 	@$(RM_FILE) ../$(PROJECT).map
 	@$(RM_FILE) ../$(PROJECT).dis
-endif
 
 # 重新构建
 rebuild: clean all
@@ -390,38 +388,25 @@ gcov-build:
 		$(eval UPDATED_FLAGS := $(CURRENT_FLAGS) $(GCOV_CFLAGS)) \
 		$(eval FILE_SPECIFIC_CFLAGS := $(file)=$(UPDATED_FLAGS) $(FILE_SPECIFIC_CFLAGS)) \
 		@echo "Adding GCov flags for $(file): $(UPDATED_FLAGS)";)
+	$(eval FILE_SPECIFIC_CFLAGS := user_task.c=-DGCOV_BUILD bsp_gcov.c=$(GCOV_TRANSPORT_DEFINE) $(FILE_SPECIFIC_CFLAGS))
+	@echo "GCOV transport: $(GCOV_TRANSPORT) [$(GCOV_TRANSPORT_DEFINE)]"
 	$(MAKE) clean all FILE_SPECIFIC_CFLAGS="$(FILE_SPECIFIC_CFLAGS)" LDFLAGS="$(LDFLAGS) $(GCOV_LDFLAGS)"
 
 # 生成覆盖率报告
 gcov-report:
 	@echo "Generating GCov coverage report..."
-ifeq ($(OS),Windows_NT)
-	@if not exist $(GCOV_DIR) $(MKDIR) $(GCOV_DIR)
-	@$(foreach file,$(GCOV_FILES), \
-		$(eval BASENAME := $(basename $(file))) \
-		$(COMPILER_DIR)$(PATH_SEP)arm-none-eabi-gcov $(BUILD_DIR)/$(BASENAME).gcda -o $(BUILD_DIR) > $(GCOV_DIR)/$(BASENAME)_report.txt 2>&1; \
-		$(COMPILER_DIR)$(PATH_SEP)arm-none-eabi-gcov $(BUILD_DIR)/$(BASENAME).gcda -o $(BUILD_DIR) --branch-probabilities > $(GCOV_DIR)/$(BASENAME)_branch.txt 2>&1; \
-	)
-else
-	@mkdir -p $(GCOV_DIR)
+	@$(MKDIR) $(GCOV_DIR)
 	@for f in $(GCOV_FILES); do \
 		$(COMPILER_DIR)/arm-none-eabi-gcov $(BUILD_DIR)/$${f%.c}.gcda -o $(BUILD_DIR) > $(GCOV_DIR)/$${f%.c}_report.txt 2>&1; \
 		$(COMPILER_DIR)/arm-none-eabi-gcov $(BUILD_DIR)/$${f%.c}.gcda -o $(BUILD_DIR) --branch-probabilities > $(GCOV_DIR)/$${f%.c}_branch.txt 2>&1; \
 	done
-endif
 	@echo "Coverage reports generated in $(GCOV_DIR) directory"
 
 # 清理覆盖率文件
 gcov-clean:
 	@echo "Cleaning GCov files..."
-ifeq ($(OS),Windows_NT)
-	@if exist $(BUILD_DIR)/*.gcno del /Q $(BUILD_DIR)\*.gcno
-	@if exist $(BUILD_DIR)/*.gcda del /Q $(BUILD_DIR)\*.gcda
-	@if exist $(GCOV_DIR) rmdir /S /Q $(GCOV_DIR)
-else
 	@rm -f $(BUILD_DIR)/*.gcno $(BUILD_DIR)/*.gcda
 	@rm -rf $(GCOV_DIR)
-endif
 
 # 完整的覆盖率测试流程：编译->运行->生成报告
 gcov-test: gcov-build run gcov-report

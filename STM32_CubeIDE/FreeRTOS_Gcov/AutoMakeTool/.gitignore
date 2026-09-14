@@ -1,0 +1,6 @@
+# gcov 测试产物(每次采集/压测可再生成,不入库)
+*.bin
+*.gcov
+st_blob
+st_round*/
+gcov_output/

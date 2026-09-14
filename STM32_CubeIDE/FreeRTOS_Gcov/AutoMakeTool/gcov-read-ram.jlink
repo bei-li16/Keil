@@ -1,0 +1,19 @@
+# gcov-read-ram.jlink —— 方案 B(RAM 缓冲)提取脚本(J-Link Commander,实测可用)
+# 真机验证过的主提取路径:不经过 GDB Server,无"连接即复位"问题
+#
+# 用法: 固件为 GCOV_TRANSPORT=ram gcov-build 产物且已烧录运行一段时间后
+#       JLink.exe -device STM32F429IG -if SWD -speed 1000 -autoconnect 0 -commanderscript gcov-read-ram.jlink
+# 产物: gcov_blob.bin -> python gcov-extract.py gcov_blob.bin -o build -> make gcov-report
+#
+# 注意:
+#   1. savebin 的三个参数用逗号分隔、文件名在前,且所有数字按"十六进制"解析
+#   2. 0x20000198 是 &gcov_buf 的链接地址,改内存布局后用 nm 查最新值:
+#      arm-none-eabi-nm build/FreeRTOS_STM32F429.elf | grep " b gcov_buf"
+#   3. 字节数 8192 十六进制即 0x2000;多读出的尾部数据由 gcov-extract.py 按流结束标记忽略
+#   4. 缓冲由 Task1000ms 每秒周期刷新,采集前让目标至少运行 1 秒以上
+connect
+h
+savebin gcov_blob.bin, 0x20000198, 8192
+# 读完让板子继续跑(如需接着采集可去掉下行注释)
+# g
+qc
