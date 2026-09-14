@@ -26,6 +26,10 @@ static void Log_Wait_Tx_Idle(void)
     {
         if ((HAL_GetTick() - t0) >= LOG_TX_WAIT_TIMEOUT_MS)
         {
+            /* also unstick the HAL UART state machine: a debug-halt that kills an
+             * in-flight DMA TX leaves gState = BUSY_TX and every later transmit
+             * would fail with HAL_BUSY (log channel stays silent forever) */
+            (void)HAL_UART_AbortTransmit(TRANSMIT_COMPORT);
             Log_Tx_En = STD_ON;
             break;
         }

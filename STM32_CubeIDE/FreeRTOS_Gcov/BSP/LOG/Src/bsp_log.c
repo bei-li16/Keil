@@ -13,6 +13,29 @@ char RxMsg[RX_MESSAGE_LEN];
 char msg_log[MSGLOG_LEN];
 MsgLog msg;
 
+#define LOG_TX_WAIT_TIMEOUT_MS 100u
+
+/* A debugger halt (e.g. dt gdb) can kill an in-flight UART DMA transfer, so
+ * HAL_UART_TxCpltCallback never runs and Log_Tx_En would stay OFF forever -
+ * every logging task then spins here without any timeout and the log channel
+ * looks dead while the tasks are still alive. Bound the wait and self-heal. */
+static void Log_Wait_Tx_Idle(void)
+{
+    uint32_t t0 = HAL_GetTick();
+    while (Log_Tx_En != STD_ON)
+    {
+        if ((HAL_GetTick() - t0) >= LOG_TX_WAIT_TIMEOUT_MS)
+        {
+            /* also unstick the HAL UART state machine: a debug-halt that kills an
+             * in-flight DMA TX leaves gState = BUSY_TX and every later transmit
+             * would fail with HAL_BUSY (log channel stays silent forever) */
+            (void)HAL_UART_AbortTransmit(TRANSMIT_COMPORT);
+            Log_Tx_En = STD_ON;
+            break;
+        }
+    }
+}
+
 void Msg_Init(void)
 {
     msg.msgptr = msg_log;
@@ -32,16 +55,20 @@ uint32_t DEBUG_PRINTF(const char *format, ...) {
     uint32_t totalLen = 0;
     uint32_t currentTime = 0;
 
-    while(Log_Tx_En != STD_ON);
+    Log_Wait_Tx_Idle();
     Log_Tx_En = STD_OFF;
     currentTime = HAL_GetTick();
     tsLen = snprintf(TxMsg, sizeof(TxMsg), "%010u", currentTime);
-    msgLen = vsnprintf(TxMsg+tsLen, sizeof(TxMsg), format, args);
+    msgLen = (uint32_t)vsnprintf(TxMsg + tsLen, sizeof(TxMsg) - tsLen, format, args);
+    if ((int)msgLen < 0)
+    {
+        msgLen = 0;
+    }
     totalLen = tsLen + msgLen;
 
     va_end(args);
 
-    if (totalLen == sizeof(TxMsg))
+    if (totalLen >= sizeof(TxMsg))
     {
         totalLen = sizeof(TxMsg) - 1;
     }
@@ -68,14 +95,18 @@ uint32_t SIMPLY_PRINTF(const char *format, ...)
     uint32_t msgLen = 0;
     uint32_t totalLen = 0;
 
-    while(Log_Tx_En != STD_ON);
+    Log_Wait_Tx_Idle();
     Log_Tx_En = STD_OFF;
-    msgLen = vsnprintf(TxMsg, sizeof(TxMsg), format, args);
+    msgLen = (uint32_t)vsnprintf(TxMsg, sizeof(TxMsg), format, args);
+    if ((int)msgLen < 0)
+    {
+        msgLen = 0;
+    }
     totalLen = msgLen;
 
     va_end(args);
 
-    if (totalLen == sizeof(TxMsg))
+    if (totalLen >= sizeof(TxMsg))
     {
         totalLen = sizeof(TxMsg) - 1;
     }
