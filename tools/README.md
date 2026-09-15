@@ -1,265 +1,109 @@
-# tools — STM32 控制台/AI 调试工具集
+# STM32 调试工具
 
-纯脚本工具集,不绑定任何工程:固件文件、elf、变量名全部作参数传入。
-**单一入口 `dt.bat`**,17 个子命令覆盖 J-Link 烧录/自检/GDB Server/RTT、gdb 变量观察与任意命令、
-探针恢复与断点清理、OpenOCD 替代方案、串口抓取。依赖的可执行文件不用装在本目录(三级查找,见下)。
-Git Bash / WSL 用户走 `dt.sh` 薄转发壳,行为与 dt.bat 完全一致。
+入口按终端选择，参数相同：CMD 用 `dt.bat`，PowerShell 用 `dt.ps1`，Git Bash / WSL 用 `dt.sh`。入口使用随附的 Windows x64 Python 和 pyserial，无需另装 Python 或执行 pip。仅随附调试所需的 GDB、J-Link 命令行组件、STM32F4/J-Link 用 OpenOCD 和精简 Python 运行时。
 
-## 文件树(共 6 个文件)
+## 整体迁移
 
-```
-tools/
-├── dt.bat                 ★ 唯一入口:17 个子命令分发,纯 ASCII+CRLF(英文注释/输出,任何终端不乱码)
-├── dt.sh                  Git Bash/WSL 薄转发壳(转调 dt.bat)
-├── uart_capture.py        串口抓取(dt uart 的实现本体)
-├── config/
-│   └── paths.bat          唯一配置点:工具路径 + 器件/接口/端口/串口
-├── bin/                   (可选)放便携版 exe,如 openocd.exe、arm-none-eabi-gdb.exe
-└── README.md              本文件
+整体复制 `tools`，或解压仓库外置归档目录 `debug_artifacts/stm32-debug-minimal-windows-x64.zip`。在新位置先运行：
+
+```bat
+tools\verify_tools.bat --full
+tools\dt.bat uart --list
+tools\dt.bat check
+tools\dt.bat read "firmware\app.elf" xTickCount
 ```
 
-## 命令参考(dt <子命令>)
+`verify_tools` 仅检查软件，不连接探针；`check` 会连接并暂停、恢复目标。ELF/HEX 是用户工程产物，请另外携带。调试程序和资源固定从当前 tools 读取，缺少文件会报错；不搜索系统安装目录，不接受外部工具路径覆盖，无需配置系统 PATH 或联网下载。推荐 Windows 10/11 x64。USB 探针和 USB 串口驱动仍属于系统依赖，完整依赖清单、原始许可证和迁移限制见 [DEPENDENCIES.md](DEPENDENCIES.md)。
 
-| 子命令 | 用法 | 功能 | 形态 |
-|---|---|---|---|
-| `check` | `dt check` | J-Link 链路自检(连接+打印寄存器),结束后目标继续运行 | 一次性 |
-| `flash` | `dt flash [--hold] <固件.hex\|.bin>` | 烧录并复位运行;`--hold` 烧完保持暂停便于接着调试 | 一次性 |
-| `server` | `dt server` | J-Link GDB Server(端口 %GDB_PORT%) | 常驻 |
-| `server-stop` | `dt server-stop` | 停止 J-Link/OpenOCD GDB Server 并释放端口 | 一次性 |
-| `rtt` | `dt rtt [输出文件]` | 抓 RTT 输出(缺省 rtt.log) | 常驻 |
-| `read` | `dt read <elf> <变量...>` | 一次性读变量值 | 一次性 |
-| `watch` | `dt watch <elf> <变量...>` | 硬件观察点盯变量(新值+调用栈) | 常驻 |
-| `gdb` | `dt gdb <elf> <gdb命令...>` | 任意 gdb 命令(每参数一条,自动初始化/断开) | 一次性 |
-| `halt` | `dt halt` | 暂停运行中的目标并跨会话保持(SetRestartOnClose,已实测) | 状态保持 |
-| `run` | `dt run` | 清 FPB/DWT 残留断点/观察点(含 FP_COMPn)后复位放行 | 一次性 |
-| `probe-reset` | `dt probe-reset` | 探针恢复(克隆 J-Link V8 退化时必跑) | 一次性 |
-| `go` | `dt go` | 恢复被暂停的目标(**不复位**,RAM 现场保留) | 一次性 |
-| `bp` | `dt bp <地址> [ms]` | 复位重启并跑到断点(**克隆探针上不可靠**,见 FAQ) | 一次性 |
-| `step` | `dt step` | 单步一条指令并保持暂停(**可连续 dt step 顺序走代码**;步进 WFI 会阻塞到中断到来) | 一次性 |
-| `ocd-server` | `dt ocd-server` | OpenOCD GDB Server(端口 %OPENOCD_PORT%) | 常驻 |
-| `ocd-flash` | `dt ocd-flash <固件> [地址]` | OpenOCD 烧录(bin 必须给地址) | 一次性 |
-| `uart` | `dt uart [--port COM7] ...` | 串口抓取/定时统计(uart_capture.py 参数透传) | 常驻/定时 |
+二进制目录和分发 ZIP 使用 Git 忽略规则，普通 `git clone` 不包含这些文件；迁移时应使用完整 ZIP 或目录副本。
 
-典型流程:
+Git 仅维护入口、脚本、配置、文档、依赖校验清单和 tools 自身的回归测试。`bin/`、`xpack-openocd/`、运行日志/状态、缓存、固件产物及压缩包保留在本地，不提交。`.gitattributes` 固定脚本和配置换行，确保重新检出后配置文件 SHA-256 不变。
 
-```
-dt probe-reset                         # 克隆 J-Link V8:每次调试会话先恢复探针
-dt flash <你的工程>\build\app.hex
-dt server &                            # 后台(bash/PS7;cmd 用 start /b)
-dt watch <你的工程>\build\app.elf g_counter &   # 后台盯变量
-dt read  <你的工程>\build\app.elf g_counter     # 随手查值
-dt run                                 # 观察结束:清残留观察点并放行
-dt go                                  # 只恢复被 halt/gdb 暂停的目标(不清残留、不复位)
-dt rtt &                               # 后台抓 RTT(固件需实现 RTT)
-dt uart --list                         # 串口抓取(需 pip install pyserial)
-dt server-stop                         # 收尾:停掉 GDB Server
+## 快速开始（PowerShell，仓库根目录）
+
+```powershell
+$elf = './STM32_CubeIDE/FreeRTOS_Project/Debug/FreeRTOS_Project.elf'
+./tools/dt.ps1 check
+./tools/dt.ps1 flash './STM32_CubeIDE/FreeRTOS_Project/Debug/FreeRTOS_Project.hex'
+./tools/dt.ps1 read $elf xTickCount g_w25q_device_id g_w25q_jedec_id
+./tools/dt.ps1 gdb $elf 'compare-sections' 'x/4xw &Log_Tx_En'
+./tools/dt.ps1 uart --duration 10 --out uart.log --count 'Task100ms'
 ```
 
-## 架构(为什么能"控制台调试")
+PowerShell 中含 `&`、`>`、`|` 的表达式应通过 `dt.ps1` 或 `tools/bin/python/python.exe tools/dt.py` 传递。CMD 中每个 GDB 表达式用双引号包住；不能把 PowerShell 的单引号规则套到 CMD。
 
-```
- gdb(read/watch) ──TCP──► J-Link GDB Server(dt server)──SWD──► MCU
- JLink.exe(flash/check)  ──────► J-Link 硬件 ─────────────► MCU
- JLinkRTTLogger(rtt)     ◄──RAM 环形缓冲(固件内 RTT 控制块)──► MCU
- pyserial(uart)          ◄──COM 口◄── 固件 USART1 打印
-```
+`read/gdb/watch` 默认自动创建并清理独立 GDB Server，无需先执行 `server`。此流程连接时暂停、刷新寄存器缓存，正常结束时显式恢复 CPU，再断开；不会复位 MCU。本机旧 J-Link V8 在持续运行的 Server 中隔一段时间重连会失效，降低 SWD 速度也未解决，独立会话避开了该问题。
 
-- **停机式变量观察**(`watch`):CPU 硬件观察点,任何路径(含 ISR)写入即停,
-  输出 `>>> [watch] 变量 = 新值` + 3 层调用栈——"counter 被谁改的"的直接答案
-- **RTT**(`rtt`):不停机、不占串口,适合中断打点;要求固件实现 SEGGER RTT 兼容控制块
-- **串口**(`uart`):无需调试器的日志通道
+## 命令
 
-## 铁律(克隆 J-Link V8 的坑,全部实测踩过)
-
-1. **每次调试会话开始先 `dt probe-reset`**(或 `dt check` 自检)——克隆 V8 每次会话后都会退化
-2. **只用断点/观察点停芯片**,绝不暂停"全速运行中"的目标(interrupt / monitor halt /
-   运行中继续操作)——会触发探针固件崩溃,之后全部操作报 Cannot access memory
-3. **一旦报 Cannot access memory → `dt probe-reset` 即可恢复**,无需拔插 USB
-4. **看日志前确认芯片在跑**(LED 在闪)——芯片被 halt 冻住时串口静默(0 字节),不是接线问题
-5. **探针独占**:server 与 JLink.exe Commander 不能同时连;`dt probe-reset` / `dt run` /
-   `dt halt` 涉及独占访问,会自动先停掉 server(用完重新 `dt server` 即可)
-6. `dt watch` / gdb 断点用完必须 `dt run`——FPB 硬件断点(FP_COMPn)与 DWT 观察点
-   寄存器**跨系统复位不清零**,残留会让 CPU 一跑到断点地址就被冻住(实测:一次 gdb
-   断点移除失败后,固件每次启动都冻死在断点地址);`dt run` 同时清 FP_COMPn、
-   DWT COMPn 与 FUNCTIONn
-
-## 端到端调试剧本
-
-### 剧本 1:烧一个新固件并确认跑起来
-```
-dt check
-dt flash <你的工程>\build\app.hex
-dt read <你的工程>\build\app.elf <任意全局变量>    # 读到合理值 = 程序在跑
-```
-
-### 剧本 2:"counter 变量的变化时机"
-```
-dt server &                                        # 后台
-dt watch <elf> g_counter > watch.log 2>&1 &        # 后台盯 30~60 秒
-dt server-stop && dt run                           # 收尾:停 server + 清残留观察点并放行
-```
-读 watch 输出:每条 `>>> [watch] g_counter = 新值` 后跟 3 层调用栈——**每次修改的
-发生位置**。counter 由多处递增时(SysTick/主循环/中断回调),各条路径的先后和
-频率一目了然。
-
-### 剧本 3:"状态机的切换"
-```
-dt watch <elf> g_fsm_state &                       # 后台
-(操作设备或等待自动流转)
-```
-每次切换打出新状态值 + 切换处的调用栈;要知道切换的**精确时间间隔**,在状态机
-函数里加 RTT/事件打点,用剧本 4 的时间线看。
-
-### 剧本 4:"UART 中断触发情况 / DMA 完成中断"
-```
-在固件回调里加打点(HAL_UARTEx_RxEventCallback / HAL_UART_TxCpltCallback 等):
-  a) 固件实现 RTT   → dt rtt &   (后台)→ 读 rtt.log
-  b) 事件写 RAM 数组 → dt gdb <elf> "x/256xw &事件数组"   # 停机倒出
-判读:TX_START→TX_DONE 成对出现 = TX DMA 完成中断正常;RX_IDLE 出现次数 = 收到
-帧数;两条事件的时间戳差 = 中断间隔。
-```
-
-### 剧本 5:纯串口日志采集(没有/不想用调试器)
-```
-dt uart --port COM3 --baud 115200 --out session.log
-```
-
-## 配置:config/paths.bat(唯一需要按机器修改的文件)
-
-| 变量 | 默认 | 说明 |
-|---|---|---|
-| `JLINK_DIR` / `TOOLCHAIN_DIR` / `OPENOCD_DIR` | 自动探测 | 三个工具目录;留空走 bin\ 和系统探测 |
-| `JLINK_DEVICE` | STM32F429IG | 芯片型号(J-Link flash 算法) |
-| `JLINK_IF` | SWD | SWD / JTAG |
-| `JLINK_SPEED` | 4000 | 接口时钟 kHz,不稳降到 1000 |
-| `PROBE_SPEED` | 1000 | probe-reset / run 专用低速(克隆 V8 实测稳定值) |
-| `GDB_PORT` | 3333 | J-Link GDB Server TCP 端口;须避开 winnat 保留段(本机 2311-2410 被保留,2333 绑定失败实测) |
-| `OPENOCD_IF` | stlink.cfg | cmsis-dap.cfg / jlink.cfg 等 |
-| `OPENOCD_PORT` | 3334 | OpenOCD GDB Server 端口(与 J-Link 的 3333 错开) |
-| `UART_PORT` / `UART_BAUD` | COM3 / 115200 | 串口抓取默认值(本机 CH340 在 COM3,`dt uart --list` 可枚举) |
-
-可执行文件三级查找:`config\paths.bat` 手工指定 → `tools\bin\` 便携目录 →
-系统默认位置(`C:\Program Files\SEGGER\JLink*`、CubeIDE 自带 gdb、`C:\Program Files\OpenOCD*`)。
-
-## 外部依赖全量清单
-
-### A. 第三方可执行文件(5 个 exe + 1 个解释器)
-
-| # | 依赖 | 被哪些子命令调用 | 来源 | 缺失时的表现 |
-|---|---|---|---|---|
-| 1 | JLink.exe | flash、check | SEGGER J-Link Software Pack | "未找到 J-Link 软件包" |
-| 2 | JLinkGDBServerCL.exe | server | 同上(⚠️ CubeIDE 精简插件不含) | server 报错并提示补装 |
-| 3 | JLinkRTTLogger.exe | rtt | 同上 | rtt 报错 |
-| 4 | arm-none-eabi-gdb.exe | read、watch | ARM GNU 工具链(xpack/arm-gnu 或 CubeIDE 自带) | "未找到 arm-none-eabi-gdb" |
-| 5 | openocd.exe | ocd-server、ocd-flash | xpack-openocd 等 | "未找到 OpenOCD"(J-Link 路线可完全不用) |
-| 6 | Python ≥3.6 | uart | 系统 Python | 脚本无法启动 |
-
-### B. Python 包
-
-| 包 | 安装 |
+| 命令 | 用法 / 行为 |
 |---|---|
-| pyserial(uart_capture.py 的 `import serial`) | `pip install pyserial`(缺失退出码 2) |
+| check | 连接、暂停、打印寄存器后恢复运行 |
+| flash | `flash [--hold] IMAGE [BIN_ADDRESS]`；校验、复位；`--hold` 保持暂停 |
+| read | `read [--backend jlink\|openocd] ELF EXPR...`；打印每个表达式 |
+| gdb | `gdb ELF 'COMMAND'...`；每个参数一条 GDB 命令 |
+| watch | `watch [--duration SECONDS] ELF EXPR...`；硬件观察点、数值和 3 层调用栈 |
+| halt | 暂停并跨 Commander 会话保持 |
+| step | 执行一条机器指令并保持暂停；不是源码行级 step |
+| bp | `bp ADDRESS [WAIT_MS]`；复位运行到指定地址；未命中返回失败并暂停 |
+| go | 保留 RAM 现场恢复运行 |
+| run | 复位、清除 STM32F429 Cortex-M4 的 6 个代码断点及 4 个 DWT 观察点、恢复运行 |
+| probe-reset | 以 PROBE_SPEED 重新连接并复位运行，不清所有观察点 |
+| server | 持续 J-Link GDB Server，供外部调试器或 `--reuse-server` 使用 |
+| ocd-server | 持续 OpenOCD GDB Server |
+| server-stop | 只停止此 tools 副本登记且 PID、创建时间、程序路径均匹配的 Server |
+| ocd-flash | `ocd-flash IMAGE [BIN_ADDRESS]`；OpenOCD 编程、验证、复位 |
+| rtt | `rtt [OUTPUT] [--timeout SECONDS]`；需固件实现 SEGGER RTT 控制块 |
+| uart | `uart --list` 或 `uart --port COM3 --baud 115200 --duration 10 --out uart.log --count REGEX` |
 
-### C. OpenOCD 配置文件(随 OpenOCD 安装)
+- **BIN 必须显式填写地址**，如 `flash app.bin 0x08000000`。HEX/ELF/SREC 自带地址，禁止再传偏移，避免错误搬移镜像。
+- `read/gdb/watch` 支持 `--port N` 和 `--reuse-server`。后者直接连接现有 Server，并由调用者负责 Server 生命周期。本机旧探针长时间复用会话的限制仍适用于此选项。
+- 其他一次性调试命令默认超时 30 秒，OpenOCD 烧录 60 秒，可用 `--timeout` 调整。`watch --duration` 到时返回 **124**，Ctrl+C 返回 **130**；随后执行 `run` 清除可能残留的硬件观察点。观察点会暂停 CPU，不应用来测量实时任务周期。
+- `check/go` 会让 CPU 运行，`bp/run/probe-reset/flash` 会复位；据此选择是否保留现场。
+- Commander、独立 GDB 会话、RTT 操作会释放本副本登记的 Server。工具不按进程名批量终止其他调试会话。已有外部 Server 占用端口时，独立会话报错；可显式选择 `--reuse-server`。
+- GDB 命令及恢复清理均有完成标记；即使 GDB 后续命令把退出码覆盖成 0，前面的符号错误、内存访问失败仍会判为失败。
+- 每次调试输出独立日志目录（默认 `tools/runtime/logs`），Server 身份登记在 `tools/runtime/state`。`DT_LOG_DIR`、`DT_STATE_DIR` 仅用于显式选择输出位置，不参与程序或资源查找；目录需要可写。
 
-| 文件 | 说明 |
+## 串口统计
+
+`--count` 可重复；各正则独立计数，一行能匹配多个规则。按完整行添加主机单调时钟时间戳，串口分包不会在行中插入时间。结束时输出未完成的尾行，但不计数。`--count` 默认采集 15 秒，普通采集未给 `--duration` 时持续运行。
+
+日志追加保存接收内容、统计和样例；配置中的端口、波特率均生效。首次打开运行中的串口可能接到半行，主机时钟与 MCU 的 HSI 时钟也存在偏差，行数不能直接等同于严格的实际时间精度。
+
+## 配置
+
+`config/paths.bat` 是统一配置入口。软件目录始终指向当前 tools，覆盖继承的 JLINK_DIR、GDB_DIR、OPENOCD_DIR、OPENOCD_SCRIPTS；不使用 TOOLCHAIN_DIR 查找 GDB。器件、速度、端口等非路径参数仍可用环境变量覆盖。直接调用 dt.py 使用同一规则，缺少内置程序或资源时立即报错。
+
+| 配置 | 默认 |
 |---|---|
-| interface/stlink.cfg / cmsis-dap.cfg / jlink.cfg | 由 `OPENOCD_IF` 选择,须与调试器匹配 |
-| target/stm32f4x.cfg | F4 系列通用;换芯片需改 dt.bat 两处 |
+| JLINK_DIR / GDB_DIR / OPENOCD_DIR | 固定为 tools 下 bin/jlink、bin/gdb/bin、xpack-openocd/bin |
+| JLINK_DEVICE / JLINK_IF | STM32F429IG / SWD |
+| JLINK_SPEED / PROBE_SPEED | 4000 / 1000 kHz |
+| GDB_PORT / OPENOCD_PORT | 3333 / 3334，仅本机 |
+| DEBUG_BACKEND | jlink |
+| OPENOCD_IF / OPENOCD_TRANSPORT | jlink.cfg / swd |
+| OPENOCD_TARGET / OPENOCD_SPEED | target/stm32f4x.cfg / 4000 kHz |
+| OPENOCD_SCRIPTS | 固定为 tools/xpack-openocd/openocd/scripts |
+| UART_PORT / UART_BAUD | COM3 / 115200 |
 
-### D. 固件/数据类依赖(输入工件)
+换芯片时要同时检查 `run` 的 FPB/DWT 寄存器数量；当前清理实现针对 STM32F429 Cortex-M4。
 
-| # | 依赖 | 被谁消费 | 要求 |
-|---|---|---|---|
-| 1 | .hex 或 .bin 固件 | flash / ocd-flash | HEX 自带地址;BIN 给地址(缺省 0x08000000) |
-| 2 | .elf(含 DWARF 调试信息) | read / watch | 必须 Debug 构建(-g,建议 -Og) |
-| 3 | 变量符号名 | read / watch 参数 | 全局/静态符号;局部变量不可靠 |
-| 4 | 固件实现 RTT | rtt | 可选能力;需 RAM 中有 "SEGGER RTT" 控制块 |
-| 5 | 固件 UART 配置 | uart | 波特率/COM 与配置一致 |
+GDB 使用标准可迁移布局：程序位于 `bin/gdb/bin`，数据位于 `bin/gdb/arm-none-eabi/share/gdb`，独立符号位于 `bin/gdb/lib/debug`。dt 启动时使用 `-nx` 忽略系统和用户初始化脚本，并明确设置内部数据、符号和自动加载目录。直接检查原厂 EXE 的默认资源目录也会指向当前 tools；`show configuration` 中的原厂编译路径是构建元数据，不是生效的资源路径。
 
-### E. 硬件
+OpenOCD 顶层配置和嵌套 `find` 引用仅允许随附脚本目录中的文件；当前工作目录或外部 OPENOCD_SCRIPTS 不能替代它们。其他芯片/探针的配置应添加到 tools 内。调试子进程 PATH 仅含内置工具目录及 Windows 系统目录。
 
-| # | 依赖 | 服务于 |
-|---|---|---|
-| 1 | J-Link(或 OpenOCD 路线下的 ST-Link/CMSIS-DAP) | 在线调试全部功能 |
-| 2 | 目标板供电 | 所有操作 |
-| 3 | SWD 接线(SWDIO+SWCLK+GND)或 JTAG 排线 | 与 `JLINK_IF` 一致 |
-| 4 | USB-TTL 串口适配器 | 仅 uart,独立于调试器 |
+ELF 及源码是用户输入，允许位于 tools 外。若 ELF 的编译目录来自另一台电脑，使用 GDB `set substitute-path` 映射到新的源码位置，或在新位置重新编译；tools 不改写 ELF 的调试信息。
 
-### F. 系统/环境层
+## 工程构建属于外部依赖
 
-| # | 依赖 | 说明 |
-|---|---|---|
-| 1 | Windows + cmd.exe | .bat 为纯 ASCII+CRLF,无编码依赖 |
-| 2 | %TEMP% 可写 | 动态生成的 *.jlink / *.gdb 临时命令文件 |
-| 3 | TCP 端口 3333(J-Link)/ %OPENOCD_PORT%(OpenOCD) | 仅本机回环 |
-| 4 | USB 驱动(J-Link 包自带 / ST-Link 驱动)、COM 驱动(CH340/CP2102) | 对应硬件 |
-| 5 | `GDB_PORT` 只在 paths.bat 一处,dt 动态生成 gdb 脚本时注入 | 无跨文件同步负担 |
+本目录只提供调试工具，不包含 GCC、CMake、Make、头文件或目标运行库。工程中的 AutoCMakeTool/Build.bat 属于工程构建流程，由调用方另行提供编译环境和 TOOLCHAIN_DIR、CMAKE_DIR、MAKE_DIR；调试配置不再自动发现或填写编译器路径，也不会把编译环境变量用于调试程序查找。
 
-### G. 明确不需要的
+## 回归与实测范围
 
-- **objdump / nm / size / objcopy**:无脚本调用(nm/objdump 为可选辅助,查地址/反汇编时手动用)
-- **CMake / make / gcc**:构建归各工程自己的 build.bat,本工具集零依赖
-- **git / IDE / 外网**:均不需要
+```powershell
+./tools/bin/python/python.exe -B -m unittest discover -s tools/tests -v
+```
 
-> 硬依赖主线 = J-Link 官方包 + arm-none-eabi-gdb + 一个 hex/bin + 一个带符号的 elf;
-> OpenOCD、pyserial、RTT 固件支持、串口适配器都是可替代或可绕过的分支能力。
+20 项离线测试不连接板卡，覆盖参数/镜像地址、失败传播、进程身份、锁和自动清理、串口分包与统计，以及外部工具覆盖、缺失内置程序、GDB 资源目录、OpenOCD 外部脚本回退。测试只需要完整 tools 包，不再依赖工程源码、工程构建脚本或主机 GCC。测试报告保存在仓库 `debug_artifacts`，不随调试目录携带。
 
-## AI 接入约定
-
-1. **常驻子命令**(server / rtt / watch / uart)以后台任务启动,输出落文件再读;
-   **一次性子命令**(check / flash / read / gdb / halt / run / probe-reset / server-stop / ocd-flash)
-   直接调用,看退出码 + stdout
-2. **失败自愈原则**:任何操作报 Cannot access memory 或连接异常 → 先 `dt probe-reset` 再重试,
-   不要原样反复重试;每次会话开始先 `dt probe-reset` 预防
-3. **server 生命周期**:`dt server`(后台)→ 调试 → `dt server-stop` 收尾;read/watch/gdb 在
-   server 未运行时会直接报错提示;`dt probe-reset` / `dt run` / `dt halt` / `dt check` / `dt flash`
-   涉及探针独占,会自动停 server,之后需重新启动
-4. **watch 收尾**:watch 结束必须 `dt run` 清残留观察点并放行目标
-5. watch 输出格式:`>>> [watch] 变量 = 值` + 3 层调用栈(修改点的代码路径)
-6. read/watch 之外的自由检查用 `dt gdb <elf> "命令"`,每参数一条 gdb 命令
-7. **gdb 后串口静默**:旧版固件会被日志忙等死锁卡死(已修复:bsp_log 忙等带 100ms 超时,
-   FreeRTOS_Project_Cmake 2026-09 之后版本);仍静默则内核真被暂停,`dt go` 恢复(保 RAM)、`dt run` 清残留
-8. **断点/单步**:gdb 通道在克隆探针上损坏(见 FAQ);原生通道单步已可用——`dt step` 连续调用
-   顺序走指令(`exec SetRestartOnClose = 0` 关闭了退出自动恢复,CycleCnt 冻结实测);运行中任意位置
-   下断点仍不可靠(`dt bp`,setbp 在克隆 DLL 上不触发),可靠方案 = 换官方 SEGGER 探针或 ST-Link+OpenOCD
-9. **保持语义**:halt/step/flash --hold/bp 命中后目标保持暂停且跨会话不变;go 恢复运行(不清残留);
-   run 清残留+复位;注意手动另开 JLink.exe 会话若不带 exec SetRestartOnClose,退出时会恢复运行
-10. 固件须 Debug 构建(-Og -g),变量为全局/静态,才有可靠符号
-11. Git Bash/WSL 下用 `./dt.sh`(转调 dt.bat);dt.bat/paths.bat 为**纯 ASCII**(英文注释与输出),
-   任何终端/编辑器都不会乱码;成败判断以退出码和标记(`[OK]` / `[ERROR]` / `[FAIL]` / `>>>`)为准
-
-## 故障排除 FAQ
-
-| 现象 | 处理 |
-|---|---|
-| 未找到 J-Link 软件包 / gdb / OpenOCD | 装官方包,或便携 exe 放 `bin\`,或改 `config\paths.bat` |
-| check 连接失败 | USB 灯 / 供电 / `JLINK_IF` 与接线 / 是否被其他软件占用 |
-| 烧录/断点插入报 Cannot access memory | 克隆 V8 探针退化:`dt probe-reset`(无需拔插 USB) |
-| 探针时好时坏、会话后连接变慢 | 同上,克隆 V8 每次会话后退化,调试前先 `dt probe-reset` |
-| watch 之后芯片行为异常/一跑就停 | 观察点残留未清:`dt run` |
-| 串口 0 字节 | 先看 LED:闪=芯片在跑查接线;不闪=芯片被暂停,`dt run` 放行 |
-| gdb 连接被拒 | `dt server` 没启动;端口被占改 `GDB_PORT` |
-| 变量 `<optimized out>` / No symbol | Release 构建;改 Debug(-Og -g)重编,或用全局变量 |
-| RTTLogger 找不到控制块 | 固件未实现 RTT |
-| 串口打不开 / 乱码 | `dt uart --list` 查口;波特率与固件一致 |
-| OpenOCD 找不到设备 | `OPENOCD_IF` 与调试器不符(stlink/cmsis-dap/jlink) |
-| .bat 打开乱码 | 不应出现(文件为纯 ASCII);若被改动过,移除非 ASCII 字符并恢复 CRLF 行尾 |
-| gdb 断点/单步命中后 PC 读回乱码 | 克隆 J-Link V8 的 gdb 远程通道缺陷(确定性复现):断点命中后寄存器读回损坏。曾实测 PC 停在断点(后被证实是 gdb 残留断点误伤);`dt bp`(复位重启语义)与 `dt step` 在克隆探针上亦不可靠。
-   **可靠断点/单步 = 官方 SEGGER 探针或 OpenOCD 路线**;`dt read`/`dt watch`/内存读写不受影响 |
-
-## 原理速查
-
-- **GDB Server**:gdb 远程协议 ↔ SWD/JTAG 的翻译器;gdb 走 TCP,可随连随断,Server 常驻
-- **硬件观察点**:Cortex-M DWT 地址比较器,CPU 每次访问匹配地址即触发,中断里的写入也抓得到
-- **RTT**:目标 RAM 环形缓冲 + 调试口 DMA 读取,单条日志微秒级,不阻塞目标
-- **Debug 构建的必要性**:符号→地址映射(DWARF)在编译期生成;-Og 保证变量驻留、断点行号与源码一致
-
-## 维护
-
-- 换芯片:改 `JLINK_DEVICE`;OpenOCD 路线同时改 dt.bat 两处 `target/stm32f4x.cfg`
-- 换调试器:J-Link 不动;OpenOCD 改 `OPENOCD_IF`
-- 加子命令:在 dt.bat 加一个 `if /i "%SUB%"=="xxx" goto S_XXX` 分支 + 实现块,配置一律来自 paths.bat
-- .bat 为纯 ASCII+CRLF:勿加入中文/非 ASCII 字符(部分控制台代码页下会乱码;
-  UTF-8+chcp 65001 实测会让批处理解析错位);CRLF 行尾必须保留
-- dt.sh 只做转发,新子命令无需同步修改;`.gitattributes` 约定 .bat=CRLF、.sh/.py=LF
+本机 OpenOCD 使用现有 J-Link 驱动时返回 `LIBUSB_ERROR_NOT_SUPPORTED`，因此其硬件烧录链路未通过；没有修改系统 USB 驱动。固件目前没有 RTT 控制块。WSL 入口已支持 wslpath，但本次只实测了 CMD、PowerShell 和 Git Bash。

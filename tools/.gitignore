@@ -1,0 +1,22 @@
+# Local portable dependencies; retain dependencies.lock.json in Git.
+/bin/
+/xpack-openocd/
+
+# Generated state, reports, packages and firmware outputs.
+/dist/
+/runtime/
+/debug_reports/
+*.log
+*.zip
+*.7z
+*.tmp
+*.elf
+*.hex
+*.bin
+*.map
+
+# Python/editor caches.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/

@@ -1,0 +1,11 @@
+# Keep portable configuration hashes stable across Windows/Linux checkouts.
+*.bat text eol=crlf
+*.ps1 text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.tcl text eol=lf
+*.cfg text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
