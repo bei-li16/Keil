@@ -4,7 +4,7 @@
 
 ## 整体迁移
 
-整体复制 `tools`，或解压仓库外置归档目录 `debug_artifacts/stm32-debug-minimal-windows-x64.zip`。在新位置先运行：
+通过 Git 克隆/拉取仓库后，`tools` 已包含调试所需的 Python、pyserial、GDB、J-Link、OpenOCD、配置及许可证。无需另行下载运行包，也不使用 Git LFS、子模块或首次运行下载。在新位置先运行：
 
 ```bat
 tools\verify_tools.bat --full
@@ -15,9 +15,9 @@ tools\dt.bat read "firmware\app.elf" xTickCount
 
 `verify_tools` 仅检查软件，不连接探针；`check` 会连接并暂停、恢复目标。ELF/HEX 是用户工程产物，请另外携带。调试程序和资源固定从当前 tools 读取，缺少文件会报错；不搜索系统安装目录，不接受外部工具路径覆盖，无需配置系统 PATH 或联网下载。推荐 Windows 10/11 x64。USB 探针和 USB 串口驱动仍属于系统依赖，完整依赖清单、原始许可证和迁移限制见 [DEPENDENCIES.md](DEPENDENCIES.md)。
 
-二进制目录和分发 ZIP 使用 Git 忽略规则，普通 `git clone` 不包含这些文件；迁移时应使用完整 ZIP 或目录副本。
+也可以整体复制 `tools`，或使用本地生成的便携 ZIP；Git 拉取本身已经包含完整运行环境。
 
-Git 仅维护入口、脚本、配置、文档、依赖校验清单和 tools 自身的回归测试。`bin/`、`xpack-openocd/`、运行日志/状态、缓存、固件产物及压缩包保留在本地，不提交。`.gitattributes` 固定脚本和配置换行，确保重新检出后配置文件 SHA-256 不变。
+Git 同时维护入口、脚本、配置、文档、依赖清单、测试及 `bin/`、`xpack-openocd/` 中的最小运行依赖。仅忽略运行日志/状态、缓存、用户固件产物和生成的分发包；Python 标准库 `python313.zip` 属于运行依赖，明确纳入 Git。`.gitattributes` 固定自有脚本换行，第三方文件保留原始字节，确保重新检出后 SHA-256 不变。
 
 ## 快速开始（PowerShell，仓库根目录）
 

@@ -49,9 +49,11 @@ GDB 本身未编译 Python 脚本支持；随附解释器只运行本工具脚�
 
 OpenOCD 依赖目录保留许可证、作者和版权文件；历史 NEWS、构建/平台 README 等非运行材料已移除。tools/tests 只保留调试工具回归，不携带工程构建或 W25Q 驱动专项测试。
 
-原下载来源和校验记录保留于工作区 debug_artifacts/history/portable_20260915。J-Link 有再分发限制，向第三方分发时遵循原许可；包未上传或发布。
+全部原厂许可证与对应运行程序一并保存。J-Link 的再分发遵循 bin/jlink/Doc/LicenseIncGUI.txt；发布者需具备相应授权。不得以本工具包的脚本许可替代第三方组件的原始许可。
 
-完整编译器、CMake、Make 和旧大 ZIP 从调试目录移除。以前的报告在 debug_artifacts/history，精简验证在 debug_artifacts/minimal_20260915，最小 ZIP 也放在 debug_artifacts，避免在 tools 中保留重复归档。二进制目录仍被 Git 忽略，请整体复制目录或携带 ZIP。
+最小运行程序、DLL、Python 标准库 ZIP、配置和许可证均使用普通 Git 对象保存，克隆/拉取后可直接运行，不需要 Git LFS、子模块或额外下载。依赖目录关闭 Git 换行转换，确保原厂文件与 dependencies.lock.json 的字节校验一致。
+
+完整编译器、CMake、Make 和旧大 ZIP 不属于最小调试工具集。运行日志、缓存、固件产物和生成的分发 ZIP 保持忽略；报告及本地便携 ZIP 位于 debug_artifacts，不影响通过 Git 获取完整 tools。
 
 ## 原完整副本
 

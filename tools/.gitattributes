@@ -9,3 +9,11 @@
 *.cfg text eol=lf
 .gitignore text eol=lf
 .gitattributes text eol=lf
+
+# Vendor files must retain their original bytes for dependency verification.
+bin/** -text -filter
+xpack-openocd/** -text -filter
+*.exe binary
+*.dll binary
+*.pyd binary
+*.zip binary
