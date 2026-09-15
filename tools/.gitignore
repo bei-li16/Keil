@@ -1,7 +1,7 @@
-# Generated state, reports, packages and firmware outputs.
-/dist/
+# Generated reports, firmware and distribution archives.
 /runtime/
 /debug_reports/
+/dist/
 *.log
 *.zip
 *.7z
@@ -11,13 +11,5 @@
 *.bin
 *.map
 
-# These are runtime dependencies, not generated artifacts.
-!/bin/python/python313.zip
+# Preserve GDB's resource directory despite the repository's Debug ignore rule.
 !/bin/gdb/lib/debug/
-
-# Python/editor caches.
-__pycache__/
-*.pyc
-*.pyo
-.pytest_cache/
-.ruff_cache/
